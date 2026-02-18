@@ -3,18 +3,18 @@ from django.db import models
 
 class TodoList(models.Model):
     """Todoリスト（リポジトリごとに分類）"""
-    repository = models.CharField(max_length=255)
+
     workdir = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.repository
+        return self.workdir
 
 
 class Agent(models.Model):
     """AIエージェントの設定"""
+
     name = models.CharField(max_length=100, unique=True, help_text="エージェント名")
-    command = models.CharField(max_length=500, help_text="実行コマンド（例: claude --dangerously-skip-permissions -p）")
     system_message = models.TextField(blank=True, help_text="システムメッセージ")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -25,18 +25,15 @@ class Agent(models.Model):
 
 class Todo(models.Model):
     """個別のTodoタスク"""
-    todo_list = models.ForeignKey(
-        TodoList,
-        on_delete=models.CASCADE,
-        related_name='todos'
-    )
+
+    todo_list = models.ForeignKey(TodoList, on_delete=models.CASCADE, related_name="todos")
     agent = models.ForeignKey(
         Agent,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='todos',
-        help_text="使用するエージェント"
+        related_name="todos",
+        help_text="使用するエージェント",
     )
     ref_files = models.JSONField(default=list, help_text="参照用ファイルリスト")
     edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト")
@@ -47,6 +44,7 @@ class Todo(models.Model):
     validation_command = models.CharField(max_length=500, blank=True, help_text="完了判断用コマンド")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    branch_name = models.CharField(max_length=255, default="")
 
     def __str__(self):
         return self.prompt[:50]
