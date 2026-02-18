@@ -103,10 +103,10 @@ class Command(BaseCommand):
                     f.flush()
 
                     # 6. AIエージェント実行
-                    self.run_agent(workdir, f.name)
+                    stdout_output = self.run_agent(workdir, f.name)
 
                     # 7. コミット
-                    self.commit_changes(workdir, todo)
+                    self.commit_changes(workdir, todo, stdout_output)
 
             finally:
                 subprocess.run(["git", "switch", current_branch_name], cwd=workdir, check=True)
@@ -120,10 +120,10 @@ class Command(BaseCommand):
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
                     f.write(self.build_recipe(todo, agent))
                     # 6. AIエージェント実行
-                    self.run_agent(worktree_path, f.name)
+                    stdout_output = self.run_agent(worktree_path, f.name)
 
                     # 7. コミット
-                    self.commit_changes(worktree_path, todo)
+                    self.commit_changes(worktree_path, todo, stdout_output)
 
             finally:
                 # 8. worktree削除
@@ -235,23 +235,67 @@ class Command(BaseCommand):
         return sio.getvalue()
 
     def run_agent(self, worktree_path, recipe_file):
-        """AIエージェントを実行"""
+        """AIエージェントを実行（stderrリアルタイム表示、stdoutを文字列として返す）"""
         self.stdout.write("AIエージェント実行中...")
 
-        # エージェント実行
-        result = subprocess.run(
+        # 出力をため込むStringIO
+        output_buffer = io.StringIO()
+
+        # Popenでstdout/stderrを別々に扱う
+        process = subprocess.Popen(
             ["goose", "run", "--recipe", recipe_file],
             cwd=worktree_path,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
+            bufsize=1,
         )
 
-        if result.returncode != 0:
-            self.stderr.write(self.style.ERROR("エージェントエラー: {}".format(result.stderr)))
+        # リアルタイムでstdout/stderrを出力
+        import select
+        import sys
 
-        self.stdout.write(result.stdout)
+        while True:
+            # 読み込み可能なfdを監視
+            reads = [process.stdout.fileno(), process.stderr.fileno()]
+            readable, _, _ = select.select(reads, [], [])
 
-    def commit_changes(self, worktree_path, todo):
+            if process.stdout.fileno() in readable:
+                line = process.stdout.readline()
+                if line:
+                    self.stdout.write(line, ending="")
+                    output_buffer.write(line)
+
+            if process.stderr.fileno() in readable:
+                line = process.stderr.readline()
+                if line:
+                    self.stderr.write(line, ending="")
+
+            # プロセスが終了した場合
+            if process.poll() is not None:
+                # 残りの出力を読み込む
+                remaining_stdout = process.stdout.read()
+                if remaining_stdout:
+                    self.stdout.write(remaining_stdout, ending="")
+                    output_buffer.write(remaining_stdout)
+
+                remaining_stderr = process.stderr.read()
+                if remaining_stderr:
+                    self.stderr.write(remaining_stderr, ending="")
+                break
+
+        returncode = process.returncode
+
+        if returncode != 0:
+            self.stderr.write(
+                self.style.ERROR("エージェントがエラーで終了しました（終了コード: {}）".format(returncode))
+            )
+            raise CommandError("エージェントがエラーで終了しました")
+
+        # stdoutの内容を文字列として返す
+        return output_buffer.getvalue()
+
+    def commit_changes(self, worktree_path, todo, stdout_output):
         """変更をコミット"""
         # 変更を追加
         subprocess.run(["git", "add", "-A"], cwd=worktree_path, check=True)
@@ -259,7 +303,8 @@ class Command(BaseCommand):
         # コミットメッセージ作成
         commit_msg = ":robot: AI Generated Update\n\n"
         commit_msg += "Todo ID: {}\n".format(todo.id)
-        commit_msg += "Prompt: {}".format(todo.prompt[:100])
+        commit_msg += "Output: {}\n".format(stdout_output[-200:])
+        # commit_msg += "Prompt: {}".format(todo.prompt[:100])
 
         # コミット
         result = subprocess.run(
@@ -270,6 +315,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("コミット完了"))
         else:
             self.stdout.write(self.style.WARNING("コミットする変更がありませんでした"))
+
+        todo.output = stdout_output
+        todo.save()
 
     def cleanup_worktree(self, worktree_path, workdir):
         """worktreeを削除"""
