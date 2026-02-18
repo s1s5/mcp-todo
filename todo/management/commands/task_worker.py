@@ -87,7 +87,7 @@ class Command(BaseCommand):
             return
 
         if todo is None:
-            self.stdout.write("queuedのTodoがありません。待機中...")
+            # self.stdout.write("queuedのTodoがありません。待機中...")
             time.sleep(interval)
             return
 
