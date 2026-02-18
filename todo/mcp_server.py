@@ -149,52 +149,52 @@ def pushTodo(
     }
 
 
-@mcp.tool()
-def popTodo() -> dict:
-    """未完了タスクを1件取得する（古い順）
-    
-    Returns:
-        処理中のTodo情報。未完了タスクがない場合はメッセージのみ
-    """
-    todo_list = get_todo_list_or_create()
-    todo = Todo.objects.filter(
-        todo_list=todo_list,
-        completed_at=False
-    ).order_by('created_at').first()
-    
-    if todo is None:
-        return {"message": "未完了のタスクはありません"}
-    
-    return {
-        "id": todo.id,
-        "files": todo.files,
-        "edit_files": todo.edit_files,
-        "prompt": todo.prompt,
-        "context": todo.context,
-        "validation_command": todo.validation_command,
-        "status": "processing"
-    }
-
-
-@mcp.tool()
-def completeTodo(todo_id: int, output: str) -> dict:
-    """Todoを完了状態にする
-    
-    Args:
-        todo_id: 完了するTodoのID（popTodoで取得したID）
-        output: 処理結果/出力
-    
-    Returns:
-        完了状态になったTodoの情報
-    """
-    todo = Todo.objects.get(id=todo_id)
-    todo.completed_at = True
-    todo.output = output
-    todo.save()
-    return {
-        "id": todo.id,
-        "status": "completed"
-    }
+# @mcp.tool()
+# def popTodo() -> dict:
+#     """未完了タスクを1件取得する（古い順）
+#     
+#     Returns:
+#         処理中のTodo情報。未完了タスクがない場合はメッセージのみ
+#     """
+#     todo_list = get_todo_list_or_create()
+#     todo = Todo.objects.filter(
+#         todo_list=todo_list,
+#         completed_at=False
+#     ).order_by('created_at').first()
+#     
+#     if todo is None:
+#         return {"message": "未完了のタスクはありません"}
+#     
+#     return {
+#         "id": todo.id,
+#         "files": todo.files,
+#         "edit_files": todo.edit_files,
+#         "prompt": todo.prompt,
+#         "context": todo.context,
+#         "validation_command": todo.validation_command,
+#         "status": "processing"
+#     }
+# 
+# 
+# @mcp.tool()
+# def completeTodo(todo_id: int, output: str) -> dict:
+#     """Todoを完了状態にする
+#     
+#     Args:
+#         todo_id: 完了するTodoのID（popTodoで取得したID）
+#         output: 処理結果/出力
+#     
+#     Returns:
+#         完了状态になったTodoの情報
+#     """
+#     todo = Todo.objects.get(id=todo_id)
+#     todo.completed_at = True
+#     todo.output = output
+#     todo.save()
+#     return {
+#         "id": todo.id,
+#         "status": "completed"
+#     }
 
 
 def main():
