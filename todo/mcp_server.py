@@ -43,6 +43,49 @@ def get_todo_list_or_create() -> TodoList:
     return todo_list
 
 
+def validate_path(workdir: str, file_path: str) -> str:
+    """
+    ファイルパスがCWD（workdir）内の相対パスかどうか検証する
+    親ディレクトリ参照 (..) や絶対パスはエラーとする
+    
+    Args:
+        workdir: 基準となるディレクトリ（TodoList.workdir）
+        file_path: 検証するファイルパス
+    
+    Returns:
+        検証済みの相対パス
+    
+    Raises:
+        ValueError: 無効なパス（親ディレクトリ参照、絶対パス）の場合
+    """
+    # 絶対パスはエラー
+    if os.path.isabs(file_path):
+        raise ValueError(f'絶対パスは指定できません: {file_path}')
+    
+    # 親ディレクトリ参照はエラー
+    if '..' in file_path:
+        raise ValueError(f'親ディレクトリ参照は禁止です: {file_path}')
+    
+    # 正規化してパスを解決
+    resolved = os.path.normpath(os.path.join(workdir, file_path))
+    
+    # workdir外に出れていないか確認
+    real_workdir = os.path.realpath(workdir)
+    real_resolved = os.path.realpath(os.path.dirname(resolved))
+    
+    # ファイル自体をチェック
+    if not real_resolved.startswith(real_workdir):
+        raise ValueError(f'workdir外のパスは指定できません: {file_path}')
+    
+    # ファイルが実際に存在するか確認
+    if not os.path.exists(resolved):
+        raise ValueError(f'ファイルが存在しません: {file_path}')
+    
+    # workdirからの相対パスを返す
+    rel_path = os.path.relpath(resolved, workdir)
+    return rel_path
+
+
 # FastMCPサーバーを作成
 from mcp import FastMCP
 
@@ -60,20 +103,34 @@ def pushTodo(
     """新しいTodoを追加する
     
     Args:
-        files: 参照用ファイルリスト
-        edit_files: 編集対象ファイルリスト
+        files: 参照用ファイルリスト（CWDからの相対パス）
+        edit_files: 編集対象ファイルリスト（CWDからの相対パス）
         prompt: タスク内容
         context: 動的に注入するコンテキスト
         validation_command: 完了判断用コマンド
     
     Returns:
         追加されたTodoの情報
+    
+    Raises:
+        ValueError: 無効なパスが指定された場合
     """
     todo_list = get_todo_list_or_create()
+    workdir = todo_list.workdir
+    
+    # パスを検証して正規化
+    validated_files = []
+    for f in files:
+        validated_files.append(validate_path(workdir, f))
+    
+    validated_edit_files = []
+    for f in edit_files:
+        validated_edit_files.append(validate_path(workdir, f))
+    
     todo = Todo.objects.create(
         todo_list=todo_list,
-        files=files,
-        edit_files=edit_files,
+        files=validated_files,
+        edit_files=validated_edit_files,
         prompt=prompt,
         context=context,
         validation_command=validation_command,
