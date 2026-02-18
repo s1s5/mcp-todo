@@ -50,12 +50,21 @@ mcp = FastMCP("todo-mcp")
 
 
 @mcp.tool()
-def pushTodo(files: list[str], prompt: str) -> dict:
+def pushTodo(
+    files: list[str],
+    edit_files: list[str],
+    prompt: str,
+    context: str = "",
+    validation_command: str = ""
+) -> dict:
     """新しいTodoを追加する
     
     Args:
-        files: 対象ファイルのリスト
-        prompt: Todoの内容/プロンプト
+        files: 参照用ファイルリスト
+        edit_files: 編集対象ファイルリスト
+        prompt: タスク内容
+        context: 動的に注入するコンテキスト
+        validation_command: 完了判断用コマンド
     
     Returns:
         追加されたTodoの情報
@@ -64,13 +73,19 @@ def pushTodo(files: list[str], prompt: str) -> dict:
     todo = Todo.objects.create(
         todo_list=todo_list,
         files=files,
+        edit_files=edit_files,
         prompt=prompt,
+        context=context,
+        validation_command=validation_command,
         completed_at=False
     )
     return {
         "id": todo.id,
         "files": todo.files,
+        "edit_files": todo.edit_files,
         "prompt": todo.prompt,
+        "context": todo.context,
+        "validation_command": todo.validation_command,
         "status": "pending"
     }
 
@@ -94,7 +109,10 @@ def popTodo() -> dict:
     return {
         "id": todo.id,
         "files": todo.files,
+        "edit_files": todo.edit_files,
         "prompt": todo.prompt,
+        "context": todo.context,
+        "validation_command": todo.validation_command,
         "status": "processing"
     }
 

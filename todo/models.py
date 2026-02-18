@@ -18,10 +18,13 @@ class Todo(models.Model):
         on_delete=models.CASCADE,
         related_name='todos'
     )
-    files = models.JSONField(default=list)
-    prompt = models.TextField()
+    files = models.JSONField(default=list, help_text="参照用ファイルリスト")
+    edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト")
+    prompt = models.TextField(help_text="タスク内容")
+    context = models.TextField(blank=True, help_text="動的に注入するコンテキスト")
     completed_at = models.BooleanField(default=False)
-    output = models.TextField(null=True, blank=True)
+    output = models.TextField(null=True, blank=True, help_text="実行結果")
+    validation_command = models.CharField(max_length=500, blank=True, help_text="完了判断用コマンド")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
