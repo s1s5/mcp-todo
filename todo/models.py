@@ -11,12 +11,32 @@ class TodoList(models.Model):
         return self.repository
 
 
+class Agent(models.Model):
+    """AIエージェントの設定"""
+    name = models.CharField(max_length=100, unique=True, help_text="エージェント名")
+    command = models.CharField(max_length=500, help_text="実行コマンド（例: claude --dangerously-skip-permissions -p）")
+    system_message = models.TextField(blank=True, help_text="システムメッセージ")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Todo(models.Model):
     """個別のTodoタスク"""
     todo_list = models.ForeignKey(
         TodoList,
         on_delete=models.CASCADE,
         related_name='todos'
+    )
+    agent = models.ForeignKey(
+        Agent,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='todos',
+        help_text="使用するエージェント"
     )
     files = models.JSONField(default=list, help_text="参照用ファイルリスト")
     edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト")
