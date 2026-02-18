@@ -2,15 +2,17 @@
 AIエージェントを実行するDjango管理コマンド
 
 使用方法:
-    python manage.py run_task <todo_pk> [--agent-cmd AGENT_CMD]
+    python manage.py run_task <todo_pk> [--agent-pk AGENT_PK] [--agent-cmd AGENT_CMD]
 
 引数:
     todo_pk: 実行するTodoのPK
 
 オプション:
-    --agent-cmd: 使用するAIエージェントコマンド (デフォルト: claude --dangerously-skip-permissions -p)
+    --agent-pk: 使用するAgentのPK（DBに保存されたエージェントを使用）
+    --agent-cmd: 使用するAIエージェントコマンド (デフォルト: Agent設定または claude --dangerously-skip-permissions -p)
     --instruction: 指示ファイルのパス
     --prompt: 直接指示を渡す
+    --worktree-root: worktreeのルートディレクトリ
 """
 import os
 import sys
@@ -24,7 +26,7 @@ import string
 
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from todo.models import TodoList, Todo
+from todo.models import TodoList, Agent, Todo
 
 
 class Command(BaseCommand):
@@ -32,9 +34,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('todo_pk', type=int, help='実行するTodoのPK')
-        parser.add_argument('--agent-cmd', type=str, 
-                            default='claude --dangerously-skip-permissions -p',
-                            help='使用するAIエージェントコマンド')
+        parser.add_argument('--agent-pk', type=int,
+                            help='使用するAgentのPK（DBに保存された設定を使用）')
+        parser.add_argument('--agent-cmd', type=str,
+                            help='使用するAIエージェントコマンド（Agent設定より優先）')
         parser.add_argument('--instruction', type=str,
                             help='指示ファイルのパス')
         parser.add_argument('--prompt', type=str,
@@ -45,25 +48,52 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         todo_pk = options['todo_pk']
-        agent_cmd = options['agent_cmd']
+        agent_pk = options['agent_pk']
+        agent_cmd_option = options['agent_cmd']
         instruction_file = options['instruction']
         prompt = options['prompt']
         worktree_root = os.path.expanduser(options['worktree_root'])
 
         # Todo取得
         try:
-            todo = Todo.objects.select_related('todo_list').get(pk=todo_pk)
+            todo = Todo.objects.select_related('todo_list', 'agent').get(pk=todo_pk)
         except Todo.DoesNotExist:
             raise CommandError('Todo {} が存在しません'.format(todo_pk))
 
         todo_list = todo.todo_list
         workdir = todo_list.workdir
 
+        # Agent解決: 引数 > Todo.agent > デフォルト
+        agent = None
+        agent_cmd = None
+        system_message = None
+
+        if agent_pk:
+            try:
+                agent = Agent.objects.get(pk=agent_pk)
+            except Agent.DoesNotExist:
+                raise CommandError('Agent {} が存在しません'.format(agent_pk))
+        elif todo.agent:
+            agent = todo.agent
+
+        if agent:
+            agent_cmd = agent.command
+            system_message = agent.system_message
+            self.stdout.write(self.style.SUCCESS('Using Agent: {}'.format(agent.name)))
+
+        # agent_cmd: 引数 > Agent > デフォルト
+        if agent_cmd_option:
+            agent_cmd = agent_cmd_option
+
+        if not agent_cmd:
+            agent_cmd = 'claude --dangerously-skip-permissions -p'
+
         # worktree_rootの存在確認
         os.makedirs(worktree_root, exist_ok=True)
 
         self.stdout.write(self.style.SUCCESS('Workdir: {}'.format(workdir)))
         self.stdout.write(self.style.SUCCESS('Todo: {}...'.format(todo.prompt[:50])))
+        self.stdout.write(self.style.SUCCESS('Agent command: {}'.format(agent_cmd)))
 
         # 1. Gitリポジトリかどうか確認
         if not self.is_git_repo(workdir):
@@ -81,7 +111,7 @@ class Command(BaseCommand):
 
         try:
             # 5. 指示ファイル作成
-            instruction_content = self.build_instruction(todo, prompt, instruction_file)
+            instruction_content = self.build_instruction(todo, prompt, instruction_file, system_message)
             
             with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
                 f.write(instruction_content)
@@ -149,40 +179,52 @@ class Command(BaseCommand):
 
         return worktree_path
 
-    def build_instruction(self, todo, prompt=None, instruction_file=None):
+    def build_instruction(self, todo, prompt=None, instruction_file=None, system_message=None):
         """指示内容を構築"""
         parts = []
+
+        # システムメッセージ
+        if system_message:
+            parts.append('## システムメッセージ')
+            parts.append(system_message)
+            parts.append('')
 
         # ファイル読み込み指示
         if todo.files:
             parts.append('## 参照用ファイル（読み込みのみ）')
             for f in todo.files:
                 parts.append('- {}'.format(f))
+            parts.append('')
 
         if todo.edit_files:
             parts.append('## 編集対象ファイル')
             for f in todo.edit_files:
                 parts.append('- {}'.format(f))
+            parts.append('')
 
         # コンテキスト
         if todo.context:
             parts.append('## コンテキスト')
             parts.append(todo.context)
+            parts.append('')
 
         # プロンプト
         parts.append('## タスク')
         parts.append(todo.prompt)
+        parts.append('')
 
         # validation_command
         if todo.validation_command:
             parts.append('## 完了判断')
             parts.append('次のコマンドが成功したら完了: `{}`'.format(todo.validation_command))
+            parts.append('')
 
         # 追加指示（ファイルから）
         if instruction_file and os.path.exists(instruction_file):
             with open(instruction_file) as f:
                 parts.append('## 追加指示')
                 parts.append(f.read())
+            parts.append('')
 
         # 追加指示（プロンプトから）
         if prompt:
