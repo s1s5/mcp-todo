@@ -4,6 +4,7 @@ Todo MCP Server
 """
 
 import os
+import uuid
 from pathlib import Path
 
 import django
@@ -38,11 +39,38 @@ if not settings.configured:
 
 from todo.models import Todo, TodoList
 
+
 def get_todo_list_or_create() -> TodoList:
     """CWDと同じTodoListを取得、なければ自動作成"""
     cwd = os.getcwd()
     todo_list, created = TodoList.objects.get_or_create(workdir=cwd, defaults={"repository": Path(cwd).name})
     return todo_list
+
+
+import re
+
+
+def validate_branch_name(branch: str) -> str:
+    """
+    ブランチ名が英数字とハイフン(-)、アンダースコア(_)のみかどうか検証する
+
+    Args:
+        branch: 検証するブランチ名
+
+    Returns:
+        検証済みのブランチ名
+
+    Raises:
+        ValueError: 無効なブランチ名の場合
+    """
+    if not branch:
+        return branch
+
+    # 英数字、ハイフン、アンダースコアのみ許可
+    if not re.match(r"^[a-zA-Z0-9_-]+$", branch):
+        raise ValueError(f"ブランチ名には英数字、ハイフン(-)、アンダースコア(_)のみ使用できます: {branch}")
+
+    return branch
 
 
 def validate_path(workdir: str, file_path: str) -> str:
@@ -88,12 +116,15 @@ def validate_path(workdir: str, file_path: str) -> str:
     return rel_path
 
 
-
-
 @mcp.tool()
 @sync_to_async
 def pushExternalTask(
-    ref_files: list[str], edit_files: list[str], prompt: str, context: str = "", validation_command: str = ""
+    ref_files: list[str],
+    edit_files: list[str],
+    prompt: str,
+    context: str = "",
+    validation_command: str = "",
+    branch: str = "",
 ) -> dict:
     """外部エージェントが実行する新しいタスクを追加する
 
@@ -103,15 +134,19 @@ def pushExternalTask(
         prompt: タスク内容
         context: 動的に注入するコンテキスト
         validation_command: 完了判断用コマンド
+        branch: ブランチ名（英数字、ハイフン、アンダースコアのみ）
 
     Returns:
         追加されたタスクの情報
 
     Raises:
-        ValueError: 無効なパスが指定された場合
+        ValueError: 無効なパスまたはブランチ名が指定された場合
     """
     todo_list = get_todo_list_or_create()
     workdir = todo_list.workdir
+
+    # ブランチ名を検証
+    validated_branch = validate_branch_name(branch)
 
     # パスを検証して正規化
     validated_ref_files = []
@@ -130,6 +165,7 @@ def pushExternalTask(
         context=context,
         validation_command=validation_command,
         completed_at=False,
+        branch_name="" if validated_branch == "" else f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}",
     )
     return {
         "id": todo.id,
@@ -138,6 +174,7 @@ def pushExternalTask(
         "prompt": todo.prompt,
         "context": todo.context,
         "validation_command": todo.validation_command,
+        "branch_name": todo.branch_name,
         "status": "pending",
     }
 

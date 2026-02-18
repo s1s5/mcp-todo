@@ -40,8 +40,9 @@ class Command(BaseCommand):
         parser.add_argument(
             "--worktree-root", type=str, default="~/work/worktrees", help="worktreeのルートディレクトリ"
         )
+        parser.add_argument("--inplace", action="store_true", help="workdir内で実行する")
 
-    def handle(self, todo_pk: int, agent_pk: int | None, **options):
+    def handle(self, todo_pk: int, agent_pk: int | None, worktree_root: str, inplace: bool, **options):
         todo_pk = options["todo_pk"]
         agent_pk = options["agent_pk"]
         worktree_root = os.path.expanduser(options["worktree_root"])
@@ -77,25 +78,56 @@ class Command(BaseCommand):
         if not self.is_git_repo(workdir):
             raise CommandError("{} はGitリポジトリではありません".format(workdir))
 
+        # 2. 作業ディレクトリがクリーンか確認
+        if inplace and (not self.is_clean(workdir)):
+            raise CommandError("{} はダーティです。変更をコミットしてください".format(workdir))
+
         # 3. ブランチ名生成
         branch_name = self.generate_branch_name() if not todo.branch_name else todo.branch_name
 
-        # 4. ブランチとworktree作成
-        worktree_path = self.create_worktree(workdir, worktree_root, branch_name)
+        if inplace:
+            result = subprocess.run(
+                ["git", "branch", "--show-current"],
+                capture_output=True,
+                text=True,
+                check=True,
+                cwd=workdir,
+            )
+            current_branch_name = result.stdout.strip()
 
-        try:
-            # 5. 指示ファイル作成
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-                f.write(self.build_recipe(todo, agent))
-                # 6. AIエージェント実行
-                self.run_agent(worktree_path, f.name)
+            self.stdout.write("ブランチ作成: {}".format(branch_name))
+            subprocess.run(["git", "switch", "-c", branch_name, "HEAD"], cwd=workdir, check=True)
 
-                # 7. コミット
-                self.commit_changes(worktree_path, todo)
+            try:
+                # 5. 指示ファイル作成
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+                    f.write(self.build_recipe(todo, agent))
+                    # 6. AIエージェント実行
+                    self.run_agent(workdir, f.name)
 
-        finally:
-            # 8. worktree削除
-            self.cleanup_worktree(worktree_path, branch_name)
+                    # 7. コミット
+                    self.commit_changes(workdir, todo)
+
+            finally:
+                subprocess.run(["git", "switch", current_branch_name], cwd=workdir, check=True)
+
+        else:
+            # 4. ブランチとworktree作成
+            worktree_path = self.create_worktree(workdir, worktree_root, branch_name)
+
+            try:
+                # 5. 指示ファイル作成
+                with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+                    f.write(self.build_recipe(todo, agent))
+                    # 6. AIエージェント実行
+                    self.run_agent(worktree_path, f.name)
+
+                    # 7. コミット
+                    self.commit_changes(worktree_path, todo)
+
+            finally:
+                # 8. worktree削除
+                self.cleanup_worktree(worktree_path, workdir)
 
         self.stdout.write(self.style.SUCCESS("完了しました"))
 
@@ -103,6 +135,11 @@ class Command(BaseCommand):
         """Gitリポジトリかどうか確認"""
         result = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=path, capture_output=True)
         return result.returncode == 0
+
+    def is_clean(self, path):
+        """作業ディレクトリがクリーンか確認"""
+        result = subprocess.run(["git", "status", "--porcelain"], cwd=path, capture_output=True, text=True)
+        return result.returncode == 0 and result.stdout.strip() == ""
 
     def generate_branch_name(self):
         """ブランチ名を生成"""
@@ -124,7 +161,7 @@ class Command(BaseCommand):
 
         # worktree作成
         self.stdout.write("Worktree作成: {}".format(worktree_path))
-        subprocess.run(["git", "worktree", "add", worktree_path, branch_name], check=True)
+        subprocess.run(["git", "worktree", "add", worktree_path, branch_name], cwd=workdir, check=True)
 
         return worktree_path
 
@@ -139,9 +176,9 @@ class Command(BaseCommand):
         #     parts.append("")
 
         # ファイル読み込み指示
-        if todo.files:
+        if todo.ref_files:
             parts.append("## 参照用ファイル（読み込みのみ）")
-            for f in todo.files:
+            for f in todo.ref_files:
                 parts.append("- {}".format(f))
             parts.append("")
 
@@ -193,6 +230,7 @@ class Command(BaseCommand):
                 "extensions": [{"type": "builtin", "name": "developer", "timeout": 300, "bundled": True}],
             },
             sio,
+            allow_unicode=True,
         )
         return sio.getvalue()
 
@@ -233,8 +271,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("コミットする変更がありませんでした"))
 
-    def cleanup_worktree(self, worktree_path, branch_name):
+    def cleanup_worktree(self, worktree_path, workdir):
         """worktreeを削除"""
         self.stdout.write("Worktreeクリーンアップ...")
-        subprocess.run(["git", "worktree", "remove", worktree_path], check=True)
+        subprocess.run(["git", "worktree", "remove", worktree_path], cwd=workdir, check=True)
         self.stdout.write(self.style.SUCCESS("Worktreeを削除しました"))
