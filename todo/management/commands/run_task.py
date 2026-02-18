@@ -41,8 +41,17 @@ class Command(BaseCommand):
             "--worktree-root", type=str, default="~/work/worktrees", help="worktreeのルートディレクトリ"
         )
         parser.add_argument("--inplace", action="store_true", help="workdir内で実行する")
+        parser.add_argument("--agent-quiet", action="store_true", help="AIエージェントの出力を表示しない")
 
-    def handle(self, todo_pk: int, agent_pk: int | None, worktree_root: str, inplace: bool, **options):
+    def handle(
+        self,
+        todo_pk: int,
+        agent_pk: int | None,
+        worktree_root: str,
+        inplace: bool,
+        agent_quiet: bool,
+        **options,
+    ):
         # Todo取得
         try:
             todo = Todo.objects.select_related("todo_list", "agent").get(pk=todo_pk)
@@ -62,6 +71,8 @@ class Command(BaseCommand):
                 raise CommandError("Agent {} が存在しません".format(agent_pk))
         elif todo.agent:
             agent = todo.agent
+        else:
+            agent = Agent.objects.all().first()
         assert agent is not None
 
         self.stdout.write(self.style.SUCCESS("Using Agent: {}".format(agent.name)))
@@ -103,7 +114,7 @@ class Command(BaseCommand):
                     f.flush()
 
                     # 6. AIエージェント実行
-                    stdout_output = self.run_agent(workdir, f.name)
+                    stdout_output = self.run_agent(workdir, f.name, agent_quiet)
 
                     # 7. コミット
                     self.commit_changes(workdir, todo, stdout_output)
@@ -120,7 +131,7 @@ class Command(BaseCommand):
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
                     f.write(self.build_recipe(todo, agent))
                     # 6. AIエージェント実行
-                    stdout_output = self.run_agent(worktree_path, f.name)
+                    stdout_output = self.run_agent(worktree_path, f.name, agent_quiet)
 
                     # 7. コミット
                     self.commit_changes(worktree_path, todo, stdout_output)
@@ -234,16 +245,20 @@ class Command(BaseCommand):
         )
         return sio.getvalue()
 
-    def run_agent(self, worktree_path, recipe_file):
+    def run_agent(self, worktree_path, recipe_file, agent_quiet):
         """AIエージェントを実行（stderrリアルタイム表示、stdoutを文字列として返す）"""
         self.stdout.write("AIエージェント実行中...")
 
         # 出力をため込むStringIO
         output_buffer = io.StringIO()
 
+        cmd = ["goose", "run", "--recipe", recipe_file]
+        if agent_quiet:
+            cmd.append("-q")
+
         # Popenでstdout/stderrを別々に扱う
         process = subprocess.Popen(
-            ["goose", "run", "--recipe", recipe_file],
+            cmd,
             cwd=worktree_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
