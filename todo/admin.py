@@ -17,7 +17,7 @@ class AgentAdmin(admin.ModelAdmin):
 
 @admin.register(Todo)
 class TodoAdmin(admin.ModelAdmin):
-    list_display = ["id", "todo_list", "agent", "prompt", "completed_at", "validation_command", "created_at"]
+    list_display = ["id", "todo_list", "agent", "prompt", "status", "validation_command", "created_at"]
     search_fields = ["prompt", "output", "context"]
-    list_filter = ["completed_at", "created_at", "agent"]
+    list_filter = ["status", "created_at", "agent"]
     filter_horizontal = []

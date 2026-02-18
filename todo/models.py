@@ -26,6 +26,14 @@ class Agent(models.Model):
 class Todo(models.Model):
     """個別のTodoタスク"""
 
+    class Status(models.TextChoices):
+        WAITING = "waiting", "Waiting"
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+        ERROR = "error", "Error"
+
     todo_list = models.ForeignKey(TodoList, on_delete=models.CASCADE, related_name="todos")
     agent = models.ForeignKey(
         Agent,
@@ -39,7 +47,12 @@ class Todo(models.Model):
     edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト")
     prompt = models.TextField(help_text="タスク内容")
     context = models.TextField(blank=True, help_text="動的に注入するコンテキスト")
-    completed_at = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.WAITING,
+        help_text="タスクのステータス",
+    )
     output = models.TextField(null=True, blank=True, help_text="実行結果")
     validation_command = models.CharField(max_length=500, blank=True, help_text="完了判断用コマンド")
     created_at = models.DateTimeField(auto_now_add=True)
