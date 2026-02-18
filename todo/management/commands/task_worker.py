@@ -25,22 +25,13 @@ from todo.models import Todo
 
 def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue):
     """子プロセスでcall_commandを実行"""
-    import sys
-    import threading
-
     import django
+    import sys
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     django.setup()
 
-    # リアルタイム出力を親プロセスに送信するスレッド
-    def stream_output(stream_name, stream):
-        for line in stream:
-            output_queue.put((stream_name, line))
-
     try:
-        import io
-
         # 親プロセスのstdout/stderrを取得
         parent_stdout = sys.stdout
         parent_stderr = sys.stderr
@@ -99,6 +90,7 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始"))
+        self.stdout.write(f"  タイムアウト: {todo.timeout}秒")
 
         # ステータスをrunningに変更
         todo.status = Todo.Status.RUNNING
@@ -121,6 +113,10 @@ class Command(BaseCommand):
         stdout_lines = []
         stderr_lines = []
 
+        # タイムアウト用
+        start_time = time.time()
+        timeout_seconds = todo.timeout
+
         try:
             while True:
                 # 定期的にステータスを確認
@@ -139,6 +135,23 @@ class Command(BaseCommand):
 
                     todo.status = Todo.Status.CANCELLED
                     todo.output = "=== CANCELLED ===\nCancelled by user"
+                    todo.save()
+                    return
+
+                # タイムアウトチェック
+                elapsed = time.time() - start_time
+                if elapsed >= timeout_seconds:
+                    self.stdout.write(self.style.ERROR(f"Todo #{todo.id} がタイムアウトしました（{timeout_seconds}秒）"))
+                    # 子プロセスを強制終了
+                    process.terminate()
+                    try:
+                        process.join(timeout=5)
+                    except:
+                        process.kill()
+                        process.join()
+
+                    todo.status = Todo.Status.TIMEOUT
+                    todo.output = f"=== TIMEOUT ===\nTimed out after {timeout_seconds} seconds"
                     todo.save()
                     return
 
