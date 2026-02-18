@@ -6,7 +6,6 @@ Todo MCP Server
 import os
 from pathlib import Path
 
-# Djangoセットアップ
 import django
 from asgiref.sync import sync_to_async
 from django.conf import settings
@@ -14,8 +13,9 @@ from django.conf import settings
 # FastMCPサーバーを作成
 from mcp.server.fastmcp import FastMCP
 
-from todo.models import Todo, TodoList
+mcp = FastMCP("todo-mcp")
 
+# Djangoセットアップ
 # settingsが未設定の場合のみ設定
 if not settings.configured:
     BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +35,8 @@ if not settings.configured:
     )
     django.setup()
 
+
+from todo.models import Todo, TodoList
 
 def get_todo_list_or_create() -> TodoList:
     """CWDと同じTodoListを取得、なければ自動作成"""
@@ -86,7 +88,6 @@ def validate_path(workdir: str, file_path: str) -> str:
     return rel_path
 
 
-mcp = FastMCP("todo-mcp")
 
 
 @mcp.tool()
