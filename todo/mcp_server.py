@@ -96,7 +96,7 @@ mcp = FastMCP("todo-mcp")
 @mcp.tool()
 @sync_to_async
 def pushTodo(
-    files: list[str],
+    ref_files: list[str],
     edit_files: list[str],
     prompt: str,
     context: str = "",
@@ -105,7 +105,7 @@ def pushTodo(
     """新しいTodoを追加する
     
     Args:
-        files: 参照用ファイルリスト（CWDからの相対パス）
+        ref_files: 参照用ファイルリスト（CWDからの相対パス）
         edit_files: 編集対象ファイルリスト（CWDからの相対パス）
         prompt: タスク内容
         context: 動的に注入するコンテキスト
@@ -121,9 +121,9 @@ def pushTodo(
     workdir = todo_list.workdir
     
     # パスを検証して正規化
-    validated_files = []
-    for f in files:
-        validated_files.append(validate_path(workdir, f))
+    validated_ref_files = []
+    for f in ref_files:
+        validated_ref_files.append(validate_path(workdir, f))
     
     validated_edit_files = []
     for f in edit_files:
@@ -131,7 +131,7 @@ def pushTodo(
     
     todo = Todo.objects.create(
         todo_list=todo_list,
-        files=validated_files,
+        ref_files=validated_ref_files,
         edit_files=validated_edit_files,
         prompt=prompt,
         context=context,
@@ -140,7 +140,7 @@ def pushTodo(
     )
     return {
         "id": todo.id,
-        "files": todo.files,
+        "ref_files": todo.ref_files,
         "edit_files": todo.edit_files,
         "prompt": todo.prompt,
         "context": todo.context,
@@ -167,7 +167,7 @@ def pushTodo(
 #     
 #     return {
 #         "id": todo.id,
-#         "files": todo.files,
+#         "ref_files": todo.ref_files,
 #         "edit_files": todo.edit_files,
 #         "prompt": todo.prompt,
 #         "context": todo.context,
