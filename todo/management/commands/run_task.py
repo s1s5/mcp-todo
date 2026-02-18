@@ -43,10 +43,6 @@ class Command(BaseCommand):
         parser.add_argument("--inplace", action="store_true", help="workdir内で実行する")
 
     def handle(self, todo_pk: int, agent_pk: int | None, worktree_root: str, inplace: bool, **options):
-        todo_pk = options["todo_pk"]
-        agent_pk = options["agent_pk"]
-        worktree_root = os.path.expanduser(options["worktree_root"])
-
         # Todo取得
         try:
             todo = Todo.objects.select_related("todo_list", "agent").get(pk=todo_pk)
@@ -101,7 +97,11 @@ class Command(BaseCommand):
             try:
                 # 5. 指示ファイル作成
                 with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-                    f.write(self.build_recipe(todo, agent))
+                    recipe = self.build_recipe(todo, agent)
+                    print(recipe)
+                    f.write(recipe)
+                    f.flush()
+
                     # 6. AIエージェント実行
                     self.run_agent(workdir, f.name)
 
