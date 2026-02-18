@@ -25,8 +25,9 @@ from todo.models import Todo
 
 def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue):
     """子プロセスでcall_commandを実行"""
-    import django
     import sys
+
+    import django
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     django.setup()
@@ -41,7 +42,7 @@ def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue):
             "run_task",
             todo_pk=todo_pk,
             inplace=True,
-            agent_quiet=True,
+            # agent_quiet=True,
             stdout=parent_stdout,
             stderr=parent_stderr,
         )
