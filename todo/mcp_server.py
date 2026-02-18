@@ -6,6 +6,7 @@ import os
 import sys
 import json
 from pathlib import Path
+from asgiref.sync import sync_to_async
 
 # Djangoセットアップ
 import django
@@ -87,12 +88,13 @@ def validate_path(workdir: str, file_path: str) -> str:
 
 
 # FastMCPサーバーを作成
-from mcp import FastMCP
+from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("todo-mcp")
 
 
 @mcp.tool()
+@sync_to_async
 def pushTodo(
     files: list[str],
     edit_files: list[str],
