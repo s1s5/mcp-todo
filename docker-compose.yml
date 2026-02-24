@@ -1,15 +1,23 @@
+x-py313-base:
+  &py313-base
+  image: python:3.13-slim
+  volumes:
+    - ./:/src
+    - /home:/home
+  environment:
+    PYTHONPATH: ./src:/src/.venv/lib/python3.13/site-packages/
+    PATH: /src/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+  working_dir: /src
+  user: ${USER_ID}:${GROUP_ID}
+
 services:
   todo.mcp-todo:
-    image: python:3.13-slim
+    <<: *py313-base
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-    volumes:
-      - ./:/src
-      - /home:/home
-    environment:
-      PYTHONPATH: ./src:/src/.venv/lib/python3.13/site-packages/
-      PATH: /src/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    working_dir: /src
-    user: ${USER_ID}:${GROUP_ID}
+
+  worker.mcp-todo:
+    <<: *py313-base
+    command: ["python", "manage.py", "task_worker"]
 
   front.mcp-todo:
     image: node:25
@@ -26,3 +34,4 @@ services:
         / > http://front.mcp-todo:5173/
         /api/ > http://todo.mcp-todo:8000/api/
         /admin/ > http://todo.mcp-todo:8000/admin/
+        /static/ > http://todo.mcp-todo:8000/static/
