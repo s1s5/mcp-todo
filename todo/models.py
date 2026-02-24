@@ -4,6 +4,7 @@ from django.db import models
 class TodoList(models.Model):
     """Todoリスト（リポジトリごとに分類）"""
 
+    name = models.CharField(max_length=255, default="", help_text="リスト名")
     workdir = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -11,11 +12,28 @@ class TodoList(models.Model):
         return self.workdir
 
 
+class Extension(models.Model):
+    """外部拡張機能"""
+
+    name = models.CharField(max_length=100, unique=True, help_text="拡張機能名")
+    type = models.CharField(max_length=20, default="stdio", help_text="拡張機能タイプ")
+    cmd = models.CharField(max_length=500, help_text="実行コマンド")
+    args = models.JSONField(default=list, help_text="コマンド引数リスト")
+    envs = models.JSONField(default=dict, help_text="環境変数マップ")
+    timeout = models.IntegerField(default=300, help_text="タイムアウト秒数")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Agent(models.Model):
     """AIエージェントの設定"""
 
     name = models.CharField(max_length=100, unique=True, help_text="エージェント名")
     system_message = models.TextField(blank=True, help_text="システムメッセージ")
+    extensions = models.ManyToManyField(Extension, blank=True, related_name="agents", help_text="使用する拡張機能")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -44,6 +62,7 @@ class Todo(models.Model):
         related_name="todos",
         help_text="使用するエージェント",
     )
+    system_prompt = models.TextField(blank=True, help_text="システムプロンプト")
     ref_files = models.JSONField(default=list, help_text="参照用ファイルリスト", blank=True)
     edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト", blank=True)
     prompt = models.TextField(help_text="タスク内容")
