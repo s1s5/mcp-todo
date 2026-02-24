@@ -13,6 +13,7 @@
 		todo_list_name: string | null;
 		workdir: string | null;
 		prompt: string;
+		title: string;
 		context: string;
 		status: string;
 		output: string | null;
@@ -260,6 +261,9 @@
 					<thead class="bg-gray-50">
 						<tr>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+								Title
+							</th>
+							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								ID
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -288,6 +292,9 @@
 								class="hover:bg-gray-50 cursor-pointer"
 								onclick={() => window.location.href = `/todo/${todo.id}`}
 							>
+								<td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate" title={todo.title}>
+									{todo.title || '-'}
+								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
 									<a href="/todo/{todo.id}" class="text-blue-600 hover:text-blue-800 font-medium" onclick={(e) => e.stopPropagation()}>
 										{todo.id}
