@@ -5,12 +5,14 @@
 
 	interface TodoList {
 		id: number;
+		name: string;
 		workdir: string;
 		created_at: string;
 		updated_at: string;
 	}
 
 	let todolist: TodoList | null = $state(null);
+	let name = $state('');
 	let workdir = $state('');
 	let loading = $state(true);
 	let submitting = $state(false);
@@ -41,8 +43,10 @@
 		try {
 			const res = await fetch(`/api/todolists/${todolistId}/`);
 			if (!res.ok) throw new Error('Failed to fetch TodoList');
-			todolist = await res.json();
-			workdir = todolist.workdir;
+			const data = await res.json();
+			todolist = data;
+			name = data.name;
+			workdir = data.workdir;
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
@@ -62,7 +66,7 @@
 					'Content-Type': 'application/json',
 					'X-CSRFToken': getCSRFToken()
 				},
-				body: JSON.stringify({ workdir })
+				body: JSON.stringify({ name, workdir })
 			});
 
 			if (!res.ok) {
@@ -112,6 +116,19 @@
 
 	{#if todolist}
 		<form onsubmit={handleSubmit} class="bg-white shadow rounded-lg p-6">
+			<div class="mb-4">
+				<label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+					Name
+				</label>
+				<input
+					type="text"
+					id="name"
+					bind:value={name}
+					placeholder="TodoList name"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+				/>
+			</div>
+
 			<div class="mb-4">
 				<label for="workdir" class="block text-sm font-medium text-gray-700 mb-2">
 					Workdir

@@ -4,6 +4,7 @@
 
 	interface TodoList {
 		id: number;
+		name: string;
 		workdir: string;
 		created_at: string;
 		updated_at: string;
@@ -117,6 +118,10 @@
 					<div>
 						<dt class="text-sm font-medium text-gray-500">ID</dt>
 						<dd class="mt-1 text-sm text-gray-900">{todolist.id}</dd>
+					</div>
+					<div>
+						<dt class="text-sm font-medium text-gray-500">Name</dt>
+						<dd class="mt-1 text-sm text-gray-900">{todolist.name || '-'}</dd>
 					</div>
 					<div class="sm:col-span-2">
 						<dt class="text-sm font-medium text-gray-500">Workdir</dt>
