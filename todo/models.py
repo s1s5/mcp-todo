@@ -44,8 +44,8 @@ class Todo(models.Model):
         related_name="todos",
         help_text="使用するエージェント",
     )
-    ref_files = models.JSONField(default=list, help_text="参照用ファイルリスト")
-    edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト")
+    ref_files = models.JSONField(default=list, help_text="参照用ファイルリスト", blank=True)
+    edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト", blank=True)
     prompt = models.TextField(help_text="タスク内容")
     context = models.TextField(blank=True, help_text="動的に注入するコンテキスト")
     status = models.CharField(
