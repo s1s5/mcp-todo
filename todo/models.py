@@ -62,6 +62,7 @@ class Todo(models.Model):
         related_name="todos",
         help_text="使用するエージェント",
     )
+    title = models.CharField(max_length=255, default="", help_text="タスクのタイトル")
     system_prompt = models.TextField(blank=True, help_text="システムプロンプト")
     ref_files = models.JSONField(default=list, help_text="参照用ファイルリスト", blank=True)
     edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト", blank=True)
@@ -82,4 +83,4 @@ class Todo(models.Model):
     auto_stash = models.BooleanField(default=True, help_text="自動スタッシュ")
 
     def __str__(self):
-        return self.prompt[:50]
+        return self.title if self.title else self.prompt[:50]

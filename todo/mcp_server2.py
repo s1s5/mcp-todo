@@ -97,6 +97,7 @@ def pushExternalTask(
     ref_files: list[str],
     edit_files: list[str],
     prompt: str,
+    title: str = "",
     context: str = "",
     validation_command: str = "",
     branch: str = "",
@@ -107,6 +108,7 @@ def pushExternalTask(
         ref_files: 参照用ファイルリスト（CWDからの相対パス）
         edit_files: 編集対象ファイルリスト（CWDからの相対パス）
         prompt: タスク内容
+        title: タスクのタイトル
         context: 動的に注入するコンテキスト
         validation_command: 完了判断用コマンド
         branch: ブランチ名（英数字、ハイフン、アンダースコアのみ）
@@ -138,6 +140,7 @@ def pushExternalTask(
     # REST APIにPOSTリクエスト
     payload = {
         "workdir": workdir,
+        "title": title,
         "ref_files": validated_ref_files,
         "edit_files": validated_edit_files,
         "prompt": prompt,
@@ -153,6 +156,7 @@ def pushExternalTask(
             result = response.json()
             return {
                 "id": result.get("id"),
+                "title": result.get("title"),
                 "ref_files": result.get("ref_files"),
                 "edit_files": result.get("edit_files"),
                 "prompt": result.get("prompt"),
