@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	interface Todo {
 		id: number;
@@ -24,6 +24,9 @@
 	let error = $state('');
 	let filterStatus = $state('');
 	let processingId = $state<number | null>(null);
+	let newTodosDetected = $state(false);
+	let currentTodoIds: number[] = $state([]);
+	let pollInterval: ReturnType<typeof setInterval> | null = null;
 
 	const statuses = ['', 'waiting', 'queued', 'running', 'completed', 'error', 'cancelled', 'timeout'];
 
@@ -47,6 +50,7 @@
 	async function fetchTodos() {
 		loading = true;
 		error = '';
+		newTodosDetected = false;
 		try {
 			let url = '/api/todos/?order_by=-updated_at';
 			if (filterStatus) {
@@ -54,11 +58,45 @@
 			}
 			const res = await fetch(url);
 			if (!res.ok) throw new Error('Failed to fetch');
-			todos = await res.json();
+			const fetchedTodos: Todo[] = await res.json();
+			todos = fetchedTodos;
+			// Update current todo IDs
+			currentTodoIds = fetchedTodos.map(t => t.id);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
+		}
+	}
+
+	// Silent fetch for polling - updates existing todos without adding new ones
+	async function fetchTodosSilent() {
+		if (loading) return; // Don't poll during initial load
+		try {
+			let url = '/api/todos/?order_by=-updated_at';
+			if (filterStatus) {
+				url += `&status=${filterStatus}`;
+			}
+			const res = await fetch(url);
+			if (!res.ok) return;
+			const fetchedTodos: Todo[] = await res.json();
+			const fetchedIds = fetchedTodos.map(t => t.id);
+
+			// Check for new todos
+			const newIds = fetchedIds.filter(id => !currentTodoIds.includes(id));
+			if (newIds.length > 0) {
+				newTodosDetected = true;
+			}
+
+			// Update existing todos by ID, preserve current order
+			const updatedTodos = todos.map(todo => {
+				const fetched = fetchedTodos.find(t => t.id === todo.id);
+				return fetched || todo;
+			});
+			todos = updatedTodos;
+			currentTodoIds = updatedTodos.map(t => t.id);
+		} catch (e) {
+			// Silent fail - don't show error for background polling
 		}
 	}
 
@@ -117,6 +155,14 @@
 
 	onMount(() => {
 		fetchTodos();
+		// Start polling every 5 seconds
+		pollInterval = setInterval(fetchTodosSilent, 5000);
+	});
+
+	onDestroy(() => {
+		if (pollInterval) {
+			clearInterval(pollInterval);
+		}
 	});
 </script>
 
@@ -138,7 +184,7 @@
 			</select>
 			<button
 				onclick={fetchTodos}
-				class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+				class="px-4 py-2 rounded transition {newTodosDetected ? 'bg-yellow-400 text-black animate-pulse' : 'bg-blue-600 text-white hover:bg-blue-700'}"
 			>
 				Refresh
 			</button>
