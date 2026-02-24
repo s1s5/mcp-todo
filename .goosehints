@@ -1,0 +1,37 @@
+# Goosehints - mcp-todo repository operational context
+
+## Build / Test / Run Commands
+
+- **MCP Server**: `python -m todo.mcp_server` or `todo-mcp` (after pip install -e .)
+- **Django Shell**: `python manage.py shell`
+- **Run Single Todo**: `python manage.py run_task <todo_pk> --inplace`
+- **Task Worker**: `python manage.py task_worker --interval 2`
+- **DB Migration**: `python manage.py makemigrations && python manage.py migrate`
+
+## Local Development
+
+- Django settings: `config/settings.py` (uses SQLite at `db.sqlite3`)
+- Models: `todo/models.py` (TodoList, Agent, Todo)
+- MCP Tools: `todo/mcp_server.py` (pushExternalTask function)
+- Management Commands: `todo/management/commands/`
+
+## Architecture
+
+- **TodoList**: Groups todos by CWD (workdir)
+- **Agent**: Stores AI agent configuration (system_message, command)
+- **Todo**: Individual tasks with status (waiting/queued/running/completed/error/cancelled/timeout)
+- **run_task**: Executes todo in git worktree or inplace, commits changes
+- **task_worker**: Daemon that polls queued todos and processes them via multiprocessing
+
+## Implicit Invariants
+
+- Branch names must match `^[a-zA-Z0-9_-]+$`
+- File paths must be relative to workdir, no parent directory refs (`..`)
+- Worktree path: `~/work/worktrees/{repo}-{branch}` (configurable via --worktree-root)
+- Agent command defaults to `goose run --recipe`
+
+## Unsafe Operations
+
+- Do NOT modify `db.sqlite3` directly - use Django ORM
+- Do NOT run `task_worker` in production without proper process supervision
+- Worktree cleanup on error is handled by `cleanup_worktree()` in run_task.py
