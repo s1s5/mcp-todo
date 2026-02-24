@@ -10,6 +10,8 @@
 		agent_name: string | null;
 		ref_files: string[];
 		edit_files: string[];
+		todo_list_name: string | null;
+		workdir: string | null;
 		prompt: string;
 		context: string;
 		status: string;
@@ -267,6 +269,9 @@
 								Agent
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+								List
+							</th>
+							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								Prompt
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -295,6 +300,13 @@
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
 									{todo.agent_name || '-'}
+								</td>
+								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+									{#if todo.todo_list_name}
+										{todo.todo_list_name}
+									{:else if todo.workdir}
+										{todo.workdir.split('/').pop()}
+									{:else}-{/if}
 								</td>
 								<td class="px-4 py-4 text-sm text-gray-500 max-w-xs truncate" title={todo.prompt}>
 									{todo.prompt || '-'}
