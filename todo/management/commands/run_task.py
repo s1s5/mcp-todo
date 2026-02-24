@@ -134,7 +134,8 @@ class Command(BaseCommand):
                         self.commit_changes(workdir, todo, stdout_output)
 
                 finally:
-                    subprocess.run(["git", "switch", current_branch_name], cwd=workdir, check=True)
+                    if current_branch_name != branch_name:
+                        subprocess.run(["git", "switch", current_branch_name], cwd=workdir, check=True)
 
             else:
                 # 4. ブランチとworktree作成
@@ -276,7 +277,7 @@ class Command(BaseCommand):
         #     parts.append("## 追加指示")
         #     parts.append(prompt)
 
-        return "\n".join(parts)
+        return "\n".join(parts).replace("\r\n", "\n")
 
     def build_recipe(self, todo: Todo, agent: Agent):
         sio = io.StringIO()
