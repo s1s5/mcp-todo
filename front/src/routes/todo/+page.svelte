@@ -303,8 +303,9 @@
 										{todo.workdir.split('/').pop()}
 									{:else}-{/if}
 								</td>
+								{@const displayTitle = todo.title && todo.title.trim() !== '' ? todo.title : (todo.prompt ? todo.prompt.substring(0, 50) + (todo.prompt.length > 50 ? '...' : '') : '-')}
 								<td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate" title={todo.prompt}>
-									{todo.title || '-'}
+									{displayTitle}
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
 									{todo.branch_name || '-'}
