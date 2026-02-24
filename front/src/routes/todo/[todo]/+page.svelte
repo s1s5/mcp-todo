@@ -25,6 +25,7 @@
 	let todo: Todo | null = $state(null);
 	let loading = $state(true);
 	let error = $state('');
+	let processingId = $state<number | null>(null);
 
 	// CSRFトークンを取得する関数
 	function getCSRFToken(): string {
@@ -55,6 +56,46 @@
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function startTodo(id: number) {
+		processingId = id;
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${id}/start/`, {
+				method: 'POST',
+				headers: {
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin'
+			});
+			if (!res.ok) throw new Error('Failed to start');
+			await fetchTodo();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to start todo';
+		} finally {
+			processingId = null;
+		}
+	}
+
+	async function cancelTodo(id: number) {
+		processingId = id;
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${id}/cancel/`, {
+				method: 'POST',
+				headers: {
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin'
+			});
+			if (!res.ok) throw new Error('Failed to cancel');
+			await fetchTodo();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to cancel todo';
+		} finally {
+			processingId = null;
 		}
 	}
 
@@ -110,9 +151,29 @@
 			<div class="px-6 py-4 border-b border-gray-200">
 				<div class="flex items-center justify-between">
 					<span class="text-lg font-semibold text-gray-900">ID: {todo.id}</span>
-					<span class="px-3 py-1 text-sm font-medium rounded-full {getStatusColor(todo.status)}">
-						{todo.status}
-					</span>
+					<div class="flex items-center gap-2">
+						{#if todo.status === 'waiting'}
+							<button
+								onclick={() => startTodo(todo.id)}
+								disabled={processingId === todo.id}
+								class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition disabled:opacity-50"
+							>
+								{processingId === todo.id ? 'Starting...' : 'Start'}
+							</button>
+						{/if}
+						{#if todo.status === 'waiting' || todo.status === 'queued'}
+							<button
+								onclick={() => cancelTodo(todo.id)}
+								disabled={processingId === todo.id}
+								class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition disabled:opacity-50"
+							>
+								{processingId === todo.id ? 'Cancelling...' : 'Cancel'}
+							</button>
+						{/if}
+						<span class="px-3 py-1 text-sm font-medium rounded-full {getStatusColor(todo.status)}">
+							{todo.status}
+						</span>
+					</div>
 				</div>
 			</div>
 			<div class="px-6 py-4 space-y-4">
