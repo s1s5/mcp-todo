@@ -61,8 +61,10 @@
 		return cookieValue;
 	}
 
-	// ページ番号をURLから取得
-	$: currentPage = Number($page.url.searchParams.get('page')) || 1;
+	// ページ番号をURLから取得（初期化のみ）
+	function getPageFromURL(): number {
+		return Number($page.url.searchParams.get('page')) || 1;
+	}
 
 	// ページ移動関数
 	function goToPage(pageNum: number) {
@@ -184,6 +186,8 @@
 	}
 
 	onMount(() => {
+		// URLからページ番号を初期化
+		currentPage = getPageFromURL();
 		fetchTodos();
 		// Start polling every 5 seconds
 		pollInterval = setInterval(fetchTodosSilent, 5000);
@@ -310,32 +314,31 @@
 				</table>
 			</div>
 		</div>
-	{/if}
-</div>
-
-	<!-- ページネーション -->
-	<div class="mt-4 flex items-center justify-between">
-		<p class="text-sm text-gray-600">
-			Total: {totalCount} items
-		</p>
-		<div class="flex items-center gap-2">
-			<button
-				onclick={() => goToPage(currentPage - 1)}
-				disabled={currentPage <= 1}
-				class="px-3 py-1 rounded border bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-			>
-				← Prev
-			</button>
-			<span class="text-sm text-gray-600">
-				{currentPage} / {totalPages}
-			</span>
-			<button
-				onclick={() => goToPage(currentPage + 1)}
-				disabled={currentPage >= totalPages}
-				class="px-3 py-1 rounded border bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-			>
-				Next →
-			</button>
+	
+		<!-- ページネーション -->
+		<div class="mt-4 flex items-center justify-between">
+			<p class="text-sm text-gray-600">
+				Total: {totalCount} items
+			</p>
+			<div class="flex items-center gap-2">
+				<button
+					onclick={() => goToPage(currentPage - 1)}
+					disabled={currentPage <= 1}
+					class="px-3 py-1 rounded border bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+				>
+					← Prev
+				</button>
+				<span class="text-sm text-gray-600">
+					{currentPage} / {totalPages}
+				</span>
+				<button
+					onclick={() => goToPage(currentPage + 1)}
+					disabled={currentPage >= totalPages}
+					class="px-3 py-1 rounded border bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+				>
+					Next →
+				</button>
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>
