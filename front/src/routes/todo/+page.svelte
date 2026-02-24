@@ -23,6 +23,7 @@
 	let loading = $state(true);
 	let error = $state('');
 	let filterStatus = $state('');
+	let processingId = $state<number | null>(null);
 
 	const statuses = ['', 'waiting', 'queued', 'running', 'completed', 'error', 'cancelled', 'timeout'];
 
@@ -41,6 +42,32 @@
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function startTodo(id: number) {
+		processingId = id;
+		try {
+			const res = await fetch(`/api/todos/${id}/start/`, { method: 'POST' });
+			if (!res.ok) throw new Error('Failed to start');
+			await fetchTodos();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to start todo';
+		} finally {
+			processingId = null;
+		}
+	}
+
+	async function cancelTodo(id: number) {
+		processingId = id;
+		try {
+			const res = await fetch(`/api/todos/${id}/cancel/`, { method: 'POST' });
+			if (!res.ok) throw new Error('Failed to cancel');
+			await fetchTodos();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to cancel todo';
+		} finally {
+			processingId = null;
 		}
 	}
 
@@ -85,10 +112,12 @@
 		</div>
 	</div>
 
+	{#if error && !processingId}
+		<p class="text-red-500 mb-4">{error}</p>
+	{/if}
+
 	{#if loading}
 		<p class="text-gray-500">Loading...</p>
-	{:else if error}
-		<p class="text-red-500">{error}</p>
 	{:else if todos.length === 0}
 		<p class="text-gray-500">No Todos found.</p>
 	{:else}
@@ -113,7 +142,7 @@
 								Branch
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Created
+								Actions
 							</th>
 						</tr>
 					</thead>
@@ -137,8 +166,27 @@
 								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
 									{todo.branch_name || '-'}
 								</td>
-								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-									{new Date(todo.created_at).toLocaleString()}
+								<td class="px-4 py-4 whitespace-nowrap text-sm">
+									<div class="flex gap-2">
+										{#if todo.status === 'waiting'}
+											<button
+												onclick={() => startTodo(todo.id)}
+												disabled={processingId === todo.id}
+												class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition disabled:opacity-50"
+											>
+												{processingId === todo.id ? 'Starting...' : 'Start'}
+											</button>
+										{/if}
+										{#if todo.status === 'waiting' || todo.status === 'queued'}
+											<button
+												onclick={() => cancelTodo(todo.id)}
+												disabled={processingId === todo.id}
+												class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition disabled:opacity-50"
+											>
+												{processingId === todo.id ? 'Cancelling...' : 'Cancel'}
+											</button>
+										{/if}
+									</div>
 								</td>
 							</tr>
 						{/each}
