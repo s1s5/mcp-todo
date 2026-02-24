@@ -135,7 +135,7 @@
 			href="/todo"
 			class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
 		>
-			← 返回
+			← 戻る
 		</a>
 		<h1 class="text-2xl font-bold">Todo詳細</h1>
 	</div>
