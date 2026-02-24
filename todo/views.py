@@ -33,6 +33,11 @@ class TodoViewSet(viewsets.ModelViewSet):
     - DELETE /api/todos/{id}/ - 削除
     - POST /api/todos/{id}/start/ - タスク開始
     - POST /api/todos/{id}/cancel/ - タスクキャンセル
+    
+    Query Parameters:
+    - workdir: 特定のworkdirでフィルタ
+    - status: 特定のステータスでフィルタ
+    - order_by: 並び替えフィールド (created_at, -created_at, updated_at, -updated_at, status, -status, id, -id)
     """
     queryset = Todo.objects.all()
     serializer_class = TodoSerializer
@@ -41,11 +46,27 @@ class TodoViewSet(viewsets.ModelViewSet):
         queryset = Todo.objects.all()
         workdir = self.request.query_params.get('workdir')
         task_status = self.request.query_params.get('status')
+        order_by = self.request.query_params.get('order_by')
         
         if workdir:
             queryset = queryset.filter(todo_list__workdir=workdir)
         if task_status:
             queryset = queryset.filter(status=task_status)
+        
+        # order_by パラメータで並び替え
+        if order_by:
+            # 安全でない文字を除去（敏感な文字列はエラー）
+            forbidden = [';', '--', '/*', '*/', 'xp_', 'sp_', 'exec', 'union']
+            if any(f in order_by.lower() for f in forbidden):
+                raise ValueError("Invalid order_by parameter")
+            
+            # 許可するフィールドのみ
+            allowed_fields = ['created_at', 'updated_at', 'status', 'id']
+            # 先頭の '-' を除去してフィールド名を取得
+            field = order_by.lstrip('-')
+            
+            if field in allowed_fields:
+                queryset = queryset.order_by(order_by)
         
         return queryset
     
