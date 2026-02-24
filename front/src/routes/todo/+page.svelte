@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
+	import { toast } from '@zerodevx/svelte-toast';
 
 	interface Todo {
 		id: number;
@@ -31,7 +32,6 @@
 	let loading = $state(true);
 	let error = $state('');
 	let filterStatus = $state('');
-	let processingId = $state<number | null>(null);
 	let newTodosDetected = $state(false);
 	let currentTodoIds: number[] = $state([]);
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -135,7 +135,12 @@
 	}
 
 	async function startTodo(id: number) {
-		processingId = id;
+		// 楽観的UI更新: ローカルstateを即座に更新
+		const previousStatus = todos.find(t => t.id === id)?.status;
+		todos = todos.map(todo => 
+			todo.id === id ? { ...todo, status: 'queued' } : todo
+		);
+		
 		try {
 			const csrfToken = getCSRFToken();
 			const res = await fetch(`/api/todos/${id}/start/`, {
@@ -147,14 +152,23 @@
 			});
 			if (!res.ok) throw new Error('Failed to start');
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to start todo';
-		} finally {
-			processingId = null;
+			// 失敗時は元のステータスに戻す
+			if (previousStatus) {
+				todos = todos.map(todo => 
+					todo.id === id ? { ...todo, status: previousStatus } : todo
+				);
+			}
+			toast.push('Failed to start todo', { type: 'error' });
 		}
 	}
 
 	async function cancelTodo(id: number) {
-		processingId = id;
+		// 楽観的UI更新: ローカルstateを即座に更新
+		const previousStatus = todos.find(t => t.id === id)?.status;
+		todos = todos.map(todo => 
+			todo.id === id ? { ...todo, status: 'cancelled' } : todo
+		);
+		
 		try {
 			const csrfToken = getCSRFToken();
 			const res = await fetch(`/api/todos/${id}/cancel/`, {
@@ -166,9 +180,13 @@
 			});
 			if (!res.ok) throw new Error('Failed to cancel');
 		} catch (e) {
-			error = e instanceof Error ? e.message : 'Failed to cancel todo';
-		} finally {
-			processingId = null;
+			// 失敗時は元のステータスに戻す
+			if (previousStatus) {
+				todos = todos.map(todo => 
+					todo.id === id ? { ...todo, status: previousStatus } : todo
+				);
+			}
+			toast.push('Failed to cancel todo', { type: 'error' });
 		}
 	}
 
@@ -225,7 +243,7 @@
 		</div>
 	</div>
 
-	{#if error && !processingId}
+	{#if error}
 		<p class="text-red-500 mb-4">{error}</p>
 	{/if}
 
@@ -287,24 +305,20 @@
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
 									<div class="flex gap-2" onclick={(e) => e.stopPropagation()}>
 										{#if todo.status === 'waiting'}
-											{#if processingId !== todo.id}
-												<button
-													onclick={() => startTodo(todo.id)}
-													class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition"
-												>
-													Start
-												</button>
-											{/if}
+											<button
+												onclick={() => startTodo(todo.id)}
+												class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition"
+											>
+												Start
+											</button>
 										{/if}
 										{#if todo.status === 'waiting' || todo.status === 'queued'}
-											{#if processingId !== todo.id}
-												<button
-													onclick={() => cancelTodo(todo.id)}
-													class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition"
-												>
-													Cancel
-												</button>
-											{/if}
+											<button
+												onclick={() => cancelTodo(todo.id)}
+												class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition"
+											>
+												Cancel
+											</button>
 										{/if}
 									</div>
 								</td>
