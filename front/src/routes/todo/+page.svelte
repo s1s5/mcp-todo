@@ -273,9 +273,6 @@
 								Title
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Prompt
-							</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								Branch
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -306,11 +303,8 @@
 										{todo.workdir.split('/').pop()}
 									{:else}-{/if}
 								</td>
-								<td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate" title={todo.title}>
+								<td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate" title={todo.prompt}>
 									{todo.title || '-'}
-								</td>
-								<td class="px-4 py-4 text-sm text-gray-500 max-w-xs truncate" title={todo.prompt}>
-									{todo.prompt || '-'}
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
 									{todo.branch_name || '-'}
