@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { marked } from 'marked';
 	import { page } from '$app/stores';
 
 	interface Todo {
@@ -214,8 +215,12 @@
 
 				<div>
 					<label class="block text-sm font-medium text-gray-500 mb-1">Prompt</label>
-					<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap">
-						{todo.prompt || '-'}
+					<div class="p-3 bg-gray-50 rounded text-gray-900 prose prose-sm max-w-none">
+						{#if todo.prompt}
+							{@html marked(todo.prompt)}
+						{:else}
+							-
+						{/if}
 					</div>
 				</div>
 
