@@ -173,7 +173,7 @@
 							<button
 								onclick={() => startTodo(todo.id)}
 								disabled={processingId === todo.id}
-								class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition disabled:opacity-50"
+								class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition disabled:opacity-50 cursor-pointer"
 							>
 								{processingId === todo.id ? 'Starting...' : (todo.status === 'error' ? 'Retry' : 'Start')}
 							</button>
@@ -182,7 +182,7 @@
 							<button
 								onclick={() => cancelTodo(todo.id)}
 								disabled={processingId === todo.id}
-								class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition disabled:opacity-50"
+								class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
 							>
 								{processingId === todo.id ? 'Cancelling...' : 'Cancel'}
 							</button>

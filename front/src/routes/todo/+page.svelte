@@ -319,7 +319,7 @@
 										{#if todo.status === 'waiting' || todo.status === 'error'}
 											<button
 												onclick={() => startTodo(todo.id)}
-												class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition"
+												class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition cursor-pointer"
 											>
 												{todo.status === 'error' ? 'Retry' : 'Start'}
 											</button>
@@ -327,7 +327,7 @@
 										{#if todo.status === 'waiting' || todo.status === 'queued'}
 											<button
 												onclick={() => cancelTodo(todo.id)}
-												class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition"
+												class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition cursor-pointer"
 											>
 												Cancel
 											</button>
