@@ -15,9 +15,9 @@ services:
     <<: *py313-base
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
-  worker.mcp-todo:
-    <<: *py313-base
-    command: ["python", "manage.py", "task_worker"]
+  # worker.mcp-todo:
+  #   <<: *py313-base
+  #   command: ["python", "manage.py", "task_worker"]
 
   front.mcp-todo:
     image: node:25

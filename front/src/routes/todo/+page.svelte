@@ -27,6 +27,23 @@
 
 	const statuses = ['', 'waiting', 'queued', 'running', 'completed', 'error', 'cancelled', 'timeout'];
 
+	// CSRFトークンを取得する関数
+	function getCSRFToken(): string {
+		const name = 'csrftoken';
+		let cookieValue = '';
+		if (document.cookie && document.cookie !== '') {
+			const cookies = document.cookie.split(';');
+			for (let i = 0; i < cookies.length; i++) {
+				const cookie = cookies[i].trim();
+				if (cookie.substring(0, name.length + 1) === (name + '=')) {
+					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+					break;
+				}
+			}
+		}
+		return cookieValue;
+	}
+
 	async function fetchTodos() {
 		loading = true;
 		error = '';
@@ -48,7 +65,14 @@
 	async function startTodo(id: number) {
 		processingId = id;
 		try {
-			const res = await fetch(`/api/todos/${id}/start/`, { method: 'POST' });
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${id}/start/`, {
+				method: 'POST',
+				headers: {
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin'
+			});
 			if (!res.ok) throw new Error('Failed to start');
 			await fetchTodos();
 		} catch (e) {
@@ -61,7 +85,14 @@
 	async function cancelTodo(id: number) {
 		processingId = id;
 		try {
-			const res = await fetch(`/api/todos/${id}/cancel/`, { method: 'POST' });
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${id}/cancel/`, {
+				method: 'POST',
+				headers: {
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin'
+			});
 			if (!res.ok) throw new Error('Failed to cancel');
 			await fetchTodos();
 		} catch (e) {
