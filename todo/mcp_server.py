@@ -180,7 +180,7 @@ def pushExternalTask(
 
 @mcp.tool()
 @sync_to_async
-def get_todos(status: str = "") -> dict:
+def listExternalTask(status: str = "") -> dict:
     """現在のtodo一覧を取得する
 
     Args:
