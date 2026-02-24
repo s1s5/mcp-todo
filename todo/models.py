@@ -60,6 +60,7 @@ class Todo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     branch_name = models.CharField(max_length=255, default="")
+    auto_stash = models.BooleanField(default=True, help_text="自動スタッシュ")
 
     def __str__(self):
         return self.prompt[:50]

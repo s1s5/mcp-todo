@@ -86,59 +86,67 @@ class Command(BaseCommand):
             raise CommandError("{} はGitリポジトリではありません".format(workdir))
 
         # 2. 作業ディレクトリがクリーンか確認
+        stash_id = None
         if inplace and (not self.is_clean(workdir)):
-            raise CommandError("{} はダーティです。変更をコミットしてください".format(workdir))
+            if not todo.auto_stash:
+                raise CommandError("{} はダーティです。変更をコミットしてください".format(workdir))
+            self.stdout.write("作業ディレクトリはダーティです。stashします")
+            stash_id = self.create_stash(workdir)
 
-        # 3. ブランチ名生成
-        branch_name = self.generate_branch_name() if not todo.branch_name else todo.branch_name
+        try:
+            # 3. ブランチ名生成
+            branch_name = self.generate_branch_name() if not todo.branch_name else todo.branch_name
 
-        if inplace:
-            result = subprocess.run(
-                ["git", "branch", "--show-current"],
-                capture_output=True,
-                text=True,
-                check=True,
-                cwd=workdir,
-            )
-            current_branch_name = result.stdout.strip()
+            if inplace:
+                result = subprocess.run(
+                    ["git", "branch", "--show-current"],
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                    cwd=workdir,
+                )
+                current_branch_name = result.stdout.strip()
 
-            self.stdout.write("ブランチ作成: {}".format(branch_name))
-            subprocess.run(["git", "switch", "-c", branch_name, "HEAD"], cwd=workdir, check=True)
+                self.stdout.write("ブランチ作成: {}".format(branch_name))
+                subprocess.run(["git", "switch", "-c", branch_name, "HEAD"], cwd=workdir, check=True)
 
-            try:
-                # 5. 指示ファイル作成
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-                    recipe = self.build_recipe(todo, agent)
-                    print(recipe)
-                    f.write(recipe)
-                    f.flush()
+                try:
+                    # 5. 指示ファイル作成
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+                        recipe = self.build_recipe(todo, agent)
+                        print(recipe)
+                        f.write(recipe)
+                        f.flush()
 
-                    # 6. AIエージェント実行
-                    stdout_output = self.run_agent(workdir, f.name, agent_quiet)
+                        # 6. AIエージェント実行
+                        stdout_output = self.run_agent(workdir, f.name, agent_quiet)
 
-                    # 7. コミット
-                    self.commit_changes(workdir, todo, stdout_output)
+                        # 7. コミット
+                        self.commit_changes(workdir, todo, stdout_output)
 
-            finally:
-                subprocess.run(["git", "switch", current_branch_name], cwd=workdir, check=True)
+                finally:
+                    subprocess.run(["git", "switch", current_branch_name], cwd=workdir, check=True)
 
-        else:
-            # 4. ブランチとworktree作成
-            worktree_path = self.create_worktree(workdir, worktree_root, branch_name)
+            else:
+                # 4. ブランチとworktree作成
+                worktree_path = self.create_worktree(workdir, worktree_root, branch_name)
 
-            try:
-                # 5. 指示ファイル作成
-                with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-                    f.write(self.build_recipe(todo, agent))
-                    # 6. AIエージェント実行
-                    stdout_output = self.run_agent(worktree_path, f.name, agent_quiet)
+                try:
+                    # 5. 指示ファイル作成
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+                        f.write(self.build_recipe(todo, agent))
+                        # 6. AIエージェント実行
+                        stdout_output = self.run_agent(worktree_path, f.name, agent_quiet)
 
-                    # 7. コミット
-                    self.commit_changes(worktree_path, todo, stdout_output)
+                        # 7. コミット
+                        self.commit_changes(worktree_path, todo, stdout_output)
 
-            finally:
-                # 8. worktree削除
-                self.cleanup_worktree(worktree_path, workdir)
+                finally:
+                    # 8. worktree削除
+                    self.cleanup_worktree(worktree_path, workdir)
+        finally:
+            if stash_id:
+                self.restore_stash(workdir, stash_id)
 
         self.stdout.write(self.style.SUCCESS("完了しました"))
 
@@ -158,6 +166,31 @@ class Command(BaseCommand):
         random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
         return "ai/{}/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
 
+    def is_current_branch(self, workdir, target_branch):
+        try:
+            # 現在のブランチ名を取得
+            result = subprocess.run(
+                ["git", "symbolic-ref", "--short", "HEAD"],
+                cwd=workdir,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+
+            return result == target_branch
+        except subprocess.CalledProcessError:
+            # HEADがデタッチされている場合（ブランチにいない状態）などはエラーになる
+            return False
+
+    def check_branch_exists(self, workdir, branch_name):
+        # --verify で存在確認、--quiet で出力を抑制
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", branch_name], cwd=workdir, capture_output=True, text=True
+        )
+
+        # 終了ステータスが 0 なら存在、それ以外なら存在しない
+        return result.returncode == 0
+
     def create_worktree(self, workdir, worktree_root, branch_name):
         """ブランチとworktreeを作成"""
         # worktreeパスを生成
@@ -167,8 +200,14 @@ class Command(BaseCommand):
         worktree_path = os.path.join(worktree_root, "{}-{}".format(path_slug, branch_slug))
 
         # ブランチ作成
-        self.stdout.write("ブランチ作成: {}".format(branch_name))
-        subprocess.run(["git", "branch", branch_name, "HEAD"], cwd=workdir, check=True)
+        if self.check_branch_exists(workdir, branch_name):
+            if self.is_current_branch(workdir, branch_name):
+                pass
+            else:
+                subprocess.run(["git", "switch", branch_name], cwd=workdir, capture_output=True, text=True)
+        else:
+            self.stdout.write("ブランチ作成: {}".format(branch_name))
+            subprocess.run(["git", "branch", branch_name, "HEAD"], cwd=workdir, check=True)
 
         # worktree作成
         self.stdout.write("Worktree作成: {}".format(worktree_path))
@@ -339,3 +378,23 @@ class Command(BaseCommand):
         self.stdout.write("Worktreeクリーンアップ...")
         subprocess.run(["git", "worktree", "remove", worktree_path], cwd=workdir, check=True)
         self.stdout.write(self.style.SUCCESS("Worktreeを削除しました"))
+
+    def create_stash(self, workdir):
+        self.stdout.write("Stash作成...")
+        subprocess.run(["git", "stash", "-u", "push", "-m", "避難"], cwd=workdir, check=True)
+
+        result = subprocess.run(
+            ["git", "rev-parse", "stash@{0}"], cwd=workdir, capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            self.stdout.write(self.style.SUCCESS("Stashを作成しました"))
+        else:
+            self.stdout.write(self.style.WARNING("Stashに失敗しました"))
+            raise Exception("Stashに失敗しました")
+
+        return result.stdout.strip()
+
+    def restore_stash(self, workdir, stash_hash):
+        self.stdout.write("Stashを復元...")
+        subprocess.run(["git", "stash", "pop", stash_hash], cwd=workdir, check=True)
+        self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
