@@ -180,8 +180,10 @@
 					<tbody class="bg-white divide-y divide-gray-200">
 						{#each todos as todo}
 							<tr class="hover:bg-gray-50">
-								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-									{todo.id}
+								<td class="px-4 py-4 whitespace-nowrap text-sm">
+									<a href="/todo/{todo.id}" class="text-blue-600 hover:text-blue-800 font-medium">
+										{todo.id}
+									</a>
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap">
 									<span class="px-2 py-1 text-xs font-medium rounded-full {getStatusColor(todo.status)}">
