@@ -324,7 +324,7 @@
 												{todo.status === 'error' ? 'Retry' : 'Start'}
 											</button>
 										{/if}
-										{#if todo.status === 'waiting' || todo.status === 'queued'}
+										{#if todo.status === 'waiting' || todo.status === 'queued' || todo.status === 'running'}
 											<button
 												onclick={() => cancelTodo(todo.id)}
 												class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition cursor-pointer"

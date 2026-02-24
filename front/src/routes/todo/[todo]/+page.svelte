@@ -178,7 +178,7 @@
 								{processingId === todo.id ? 'Starting...' : (todo.status === 'error' ? 'Retry' : 'Start')}
 							</button>
 						{/if}
-						{#if todo.status === 'waiting' || todo.status === 'queued'}
+						{#if todo.status === 'waiting' || todo.status === 'queued' || todo.status === 'running'}
 							<button
 								onclick={() => cancelTodo(todo.id)}
 								disabled={processingId === todo.id}
