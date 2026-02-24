@@ -10,3 +10,4 @@ wheels/
 .venv
 /.goose_prompt_temp.md
 /db.sqlite3
+docker-compose.override.yml
