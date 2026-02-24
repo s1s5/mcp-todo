@@ -261,19 +261,16 @@
 					<thead class="bg-gray-50">
 						<tr>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Title
-							</th>
-							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								ID
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								Status
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								Agent
+								List
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-								List
+								Title
 							</th>
 							<th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 								Prompt
@@ -292,9 +289,6 @@
 								class="hover:bg-gray-50 cursor-pointer"
 								onclick={() => window.location.href = `/todo/${todo.id}`}
 							>
-								<td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate" title={todo.title}>
-									{todo.title || '-'}
-								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
 									<a href="/todo/{todo.id}" class="text-blue-600 hover:text-blue-800 font-medium" onclick={(e) => e.stopPropagation()}>
 										{todo.id}
@@ -306,14 +300,14 @@
 									</span>
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-									{todo.agent_name || '-'}
-								</td>
-								<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
 									{#if todo.todo_list_name}
 										{todo.todo_list_name}
 									{:else if todo.workdir}
 										{todo.workdir.split('/').pop()}
 									{:else}-{/if}
+								</td>
+								<td class="px-4 py-4 text-sm text-gray-900 max-w-xs truncate" title={todo.title}>
+									{todo.title || '-'}
 								</td>
 								<td class="px-4 py-4 text-sm text-gray-500 max-w-xs truncate" title={todo.prompt}>
 									{todo.prompt || '-'}
