@@ -21,6 +21,7 @@
 		agent_name: string | null;
 		prompt: string;
 		status: string;
+		branch_name: string | null;
 	}
 
 	let todo: Todo | null = $state(null);
@@ -35,6 +36,7 @@
 	let formStatus = $state('waiting');
 	let formTodoList = $state<number | null>(null);
 	let formAgent = $state<number | null>(null);
+	let formBranch = $state('');
 
 	// CSRFトークンを取得する関数
 	function getCSRFToken(): string {
@@ -68,6 +70,7 @@
 				formStatus = todo.status;
 				formTodoList = todo.todo_list;
 				formAgent = todo.agent;
+				formBranch = todo.branch_name || '';
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
@@ -114,6 +117,12 @@
 
 			if (formAgent !== null) {
 				payload.agent = formAgent;
+			}
+
+			if (formBranch) {
+				payload.branch_name = formBranch;
+			} else {
+				payload.branch_name = null;
 			}
 
 			const res = await fetch(`/api/todos/${todoId}/`, {
@@ -223,6 +232,20 @@
 							</option>
 						{/each}
 					</select>
+				</div>
+
+				<!-- Branch -->
+				<div>
+					<label for="branch" class="block text-sm font-medium text-gray-700 mb-2">
+						Branch
+					</label>
+					<input
+						type="text"
+						id="branch"
+						bind:value={formBranch}
+						placeholder="branch-name"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
 				</div>
 
 				<!-- Agent -->
