@@ -48,6 +48,20 @@
 			</svg>
 		</a>
 		<h1 class="text-2xl font-bold">Agent Details</h1>
+		<div class="flex gap-2 ml-4">
+			<a
+				href="/agent/{agentId}/update/"
+				class="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded transition"
+			>
+				編集
+			</a>
+			<a
+				href="/agent/{agentId}/delete/"
+				class="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded transition"
+			>
+				削除
+			</a>
+		</div>
 		<button
 			onclick={fetchAgentDetail}
 			class="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
