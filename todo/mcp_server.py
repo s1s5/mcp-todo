@@ -164,7 +164,7 @@ def pushExternalTask(
         prompt=prompt,
         context=context,
         validation_command=validation_command,
-        branch_name="" if validated_branch == "" else f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}",
+        branch_name=validated_branch, # f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}",
     )
     return {
         "id": todo.id,

@@ -132,7 +132,8 @@ def pushExternalTask(
         validated_edit_files.append(validate_path(workdir, f, False))
 
     # ブランチ名の生成
-    branch_name = "" if validated_branch == "" else f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}"
+    # branch_name = "" if validated_branch == "" else f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}"
+    branch_name = validated_branch
 
     # REST APIにPOSTリクエスト
     payload = {
