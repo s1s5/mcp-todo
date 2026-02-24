@@ -181,9 +181,12 @@
 					</thead>
 					<tbody class="bg-white divide-y divide-gray-200">
 						{#each todos as todo}
-							<tr class="hover:bg-gray-50">
+							<tr
+								class="hover:bg-gray-50 cursor-pointer"
+								onclick={() => window.location.href = `/todo/${todo.id}`}
+							>
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
-									<a href="/todo/{todo.id}" class="text-blue-600 hover:text-blue-800 font-medium">
+									<a href="/todo/{todo.id}" class="text-blue-600 hover:text-blue-800 font-medium" onclick={(e) => e.stopPropagation()}>
 										{todo.id}
 									</a>
 								</td>
@@ -202,7 +205,7 @@
 									{todo.branch_name || '-'}
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
-									<div class="flex gap-2">
+									<div class="flex gap-2" onclick={(e) => e.stopPropagation()}>
 										{#if todo.status === 'waiting'}
 											<button
 												onclick={() => startTodo(todo.id)}
