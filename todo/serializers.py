@@ -30,6 +30,7 @@ class TodoSerializer(serializers.ModelSerializer):
             'agent',
             'agent_name',
             'todo_list_name',  # 追加
+            'title',
             'ref_files',
             'edit_files',
             'prompt',
