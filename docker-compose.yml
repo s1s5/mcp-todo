@@ -25,3 +25,4 @@ services:
       NGINX_CONF: |
         / > http://front.mcp-todo:5173/
         /api/ > http://todo.mcp-todo:8000/api/
+        /admin/ > http://todo.mcp-todo:8000/admin/
