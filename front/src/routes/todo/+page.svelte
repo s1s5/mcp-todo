@@ -31,9 +31,9 @@
 		loading = true;
 		error = '';
 		try {
-			let url = '/api/todos/';
+			let url = '/api/todos/?order_by=-updated_at';
 			if (filterStatus) {
-				url += `?status=${filterStatus}`;
+				url += `&status=${filterStatus}`;
 			}
 			const res = await fetch(url);
 			if (!res.ok) throw new Error('Failed to fetch');
