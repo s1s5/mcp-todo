@@ -31,6 +31,27 @@ from django.core.management.base import BaseCommand, CommandError
 from todo.models import Agent, Todo, TodoList
 
 
+def sanitize_prompt(text: str) -> str:
+    """
+    文字列をjinja2テンプレートとして展開しても同等のものに変換する。
+    具体的には、jinja2のテンプレート構文を開始する文字列をエスケープする。
+    
+    - {# → {{ "{#" }}
+    - {% → {{ "{%" }}
+    - {{ → {{ "{{" }}
+    
+    Args:
+        text: エスケープ対象の文字列
+    
+    Returns:
+        エスケープされた文字列
+    """
+    result = text
+    result = result.replace("{{", '{{ "{{" }}')
+    result = result.replace("{%", '{{ "{%" }}')
+    result = result.replace("{#", '{{ "{#" }}')
+    return result.replace("\r\n", "\n")
+
 class Command(BaseCommand):
     help = "AIエージェントを実行してタスクを完了する"
 
@@ -277,7 +298,7 @@ class Command(BaseCommand):
         #     parts.append("## 追加指示")
         #     parts.append(prompt)
 
-        return "\n".join(parts).replace("\r\n", "\n")
+        return "\n".join(parts)
 
     def build_recipe(self, todo: Todo, agent: Agent):
         sio = io.StringIO()
@@ -285,8 +306,8 @@ class Command(BaseCommand):
             {
                 "title": "タスク実行",
                 "description": "",
-                "instructions": agent.system_message,
-                "prompt": self.build_instruction(todo),
+                "instructions": sanitize_prompt(agent.system_message),
+                "prompt": sanitize_prompt(self.build_instruction(todo)),
                 "extensions": [{"type": "builtin", "name": "developer", "timeout": 300, "bundled": True}],
             },
             sio,
@@ -407,4 +428,5 @@ class Command(BaseCommand):
     def restore_stash(self, workdir, stash_hash):
         self.stdout.write("Stashを復元...")
         subprocess.run(["git", "stash", "pop", stash_hash], cwd=workdir, check=True)
+        self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
         self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
