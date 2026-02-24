@@ -178,6 +178,72 @@ def pushExternalTask(
     }
 
 
+@mcp.tool()
+@sync_to_async
+def get_todos(status: str = "") -> dict:
+    """現在のtodo一覧を取得する
+
+    Args:
+        status: ステータスでフィルタリング（waiting, queued, running, completed, error, cancelled, timeout）
+               空の場合はすべてのステータスを取得
+
+    Returns:
+        todo一覧（ステータスがrunning, queued, waitingのtodoを優先的に表示）
+    """
+    todo_list = get_todo_list_or_create()
+
+    # ベースクエリ
+    todos = Todo.objects.filter(todo_list=todo_list).select_related("todo_list", "agent").order_by("-created_at")
+
+    # ステータスでフィルタリング
+    if status:
+        todos = todos.filter(status=status)
+
+    # 優先度順にソート: running > queued > waiting > others
+    def sort_priority(todo):
+        priority_map = {
+            "running": 0,
+            "queued": 1,
+            "waiting": 2,
+        }
+        return priority_map.get(todo.status, 3)
+
+    todos = sorted(todos, key=sort_priority)
+
+    # 結果を作成
+    result = []
+    for todo in todos:
+        # promptを50文字程度に丸める
+        prompt_preview = todo.prompt[:50] + "..." if len(todo.prompt) > 50 else todo.prompt
+
+        result.append({
+            "id": todo.id,
+            "status": todo.status,
+            "prompt": prompt_detail(todo.prompt),
+            "prompt_preview": prompt_preview,
+            "todo_list": {
+                "id": todo.todo_list.id,
+                "name": todo.todo_list.workdir,
+            },
+            "agent_name": todo.agent.name if todo.agent else None,
+            "created_at": todo.created_at.isoformat() if todo.created_at else None,
+            "updated_at": todo.updated_at.isoformat() if todo.updated_at else None,
+        })
+
+    return {
+        "todos": result,
+        "total": len(result),
+        "filter": status if status else "all",
+    }
+
+
+def prompt_detail(prompt: str) -> str:
+    """promptの詳細を返す（最初の100文字程度）"""
+    if len(prompt) <= 100:
+        return prompt
+    return prompt[:100] + "..."
+
+
 def main():
     mcp.run()
 
