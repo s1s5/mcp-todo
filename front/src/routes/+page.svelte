@@ -16,5 +16,10 @@
 			<h2 class="text-xl font-semibold text-gray-800">Todos</h2>
 			<p class="text-gray-600 mt-1">View and manage individual tasks</p>
 		</a>
+
+		<a href="/extension/" class="block p-6 bg-white rounded-lg shadow hover:shadow-md transition border border-gray-200">
+			<h2 class="text-xl font-semibold text-gray-800">Extensions</h2>
+			<p class="text-gray-600 mt-1">Manage extensions</p>
+		</a>
 	</div>
 </div>
