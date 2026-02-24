@@ -121,6 +121,8 @@
 </script>
 
 <div class="p-6 max-w-6xl mx-auto">
+	<a href="/" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">← Back to Home</a>
+	
 	<div class="flex justify-between items-center mb-6">
 		<h1 class="text-2xl font-bold">Todos</h1>
 		<div class="flex gap-4 items-center">
