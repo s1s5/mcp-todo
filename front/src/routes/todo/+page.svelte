@@ -144,7 +144,6 @@
 				credentials: 'same-origin'
 			});
 			if (!res.ok) throw new Error('Failed to start');
-			await fetchTodos();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to start todo';
 		} finally {
@@ -164,7 +163,6 @@
 				credentials: 'same-origin'
 			});
 			if (!res.ok) throw new Error('Failed to cancel');
-			await fetchTodos();
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Failed to cancel todo';
 		} finally {
@@ -285,22 +283,24 @@
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
 									<div class="flex gap-2" onclick={(e) => e.stopPropagation()}>
 										{#if todo.status === 'waiting'}
-											<button
-												onclick={() => startTodo(todo.id)}
-												disabled={processingId === todo.id}
-												class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition disabled:opacity-50"
-											>
-												{processingId === todo.id ? 'Starting...' : 'Start'}
-											</button>
+											{#if processingId !== todo.id}
+												<button
+													onclick={() => startTodo(todo.id)}
+													class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition"
+												>
+													Start
+												</button>
+											{/if}
 										{/if}
 										{#if todo.status === 'waiting' || todo.status === 'queued'}
-											<button
-												onclick={() => cancelTodo(todo.id)}
-												disabled={processingId === todo.id}
-												class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition disabled:opacity-50"
-											>
-												{processingId === todo.id ? 'Cancelling...' : 'Cancel'}
-											</button>
+											{#if processingId !== todo.id}
+												<button
+													onclick={() => cancelTodo(todo.id)}
+													class="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition"
+												>
+													Cancel
+												</button>
+											{/if}
 										{/if}
 									</div>
 								</td>
