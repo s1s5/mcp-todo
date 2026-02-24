@@ -12,13 +12,14 @@ class AgentSerializer(serializers.ModelSerializer):
 class TodoListSerializer(serializers.ModelSerializer):
     class Meta:
         model = TodoList
-        fields = ['id', 'workdir', 'created_at']
+        fields = ['id', 'name', 'workdir', 'created_at']  # nameを追加
         read_only_fields = ['created_at']
 
 
 class TodoSerializer(serializers.ModelSerializer):
     agent_name = serializers.CharField(source='agent.name', read_only=True, allow_null=True)
     workdir = serializers.CharField(source='todo_list.workdir', read_only=True)
+    todo_list_name = serializers.CharField(source='todo_list.name', read_only=True)  # 追加
     
     class Meta:
         model = Todo
@@ -28,6 +29,7 @@ class TodoSerializer(serializers.ModelSerializer):
             'workdir',  # todo_list経由で参照（読み取り専用）
             'agent',
             'agent_name',
+            'todo_list_name',  # 追加
             'ref_files',
             'edit_files',
             'prompt',
