@@ -65,19 +65,17 @@
 				</thead>
 				<tbody class="bg-white divide-y divide-gray-200">
 					{#each todolists as list}
-						<a href="/todolist/{list.id}" class="block">
-							<tr class="hover:bg-gray-50 cursor-pointer">
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-									{list.id}
-								</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-									{list.workdir}
-								</td>
-								<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-									{new Date(list.created_at).toLocaleString()}
-								</td>
-							</tr>
-						</a>
+						<tr class="hover:bg-gray-50 cursor-pointer">
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+								<a href="/todolist/{list.id}" class="hover:underline">{list.id}</a>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+								<a href="/todolist/{list.id}" class="hover:underline">{list.workdir}</a>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+								<a href="/todolist/{list.id}" class="hover:underline">{new Date(list.created_at).toLocaleString()}</a>
+							</td>
+						</tr>
 					{/each}
 				</tbody>
 			</table>
