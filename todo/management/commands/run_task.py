@@ -18,6 +18,7 @@ AIエージェントを実行するDjango管理コマンド
 import io
 import os
 import random
+import re
 import string
 import subprocess
 import tempfile
@@ -35,22 +36,31 @@ def sanitize_prompt(text: str) -> str:
     """
     文字列をjinja2テンプレートとして展開しても同等のものに変換する。
     具体的には、jinja2のテンプレート構文を開始する文字列をエスケープする。
-    
+
     - {# → {{ "{#" }}
     - {% → {{ "{%" }}
     - {{ → {{ "{{" }}
-    
+
     Args:
         text: エスケープ対象の文字列
-    
+
     Returns:
         エスケープされた文字列
     """
     result = text
-    result = result.replace("{{", '{{ "{{" }}')
-    result = result.replace("{%", '{{ "{%" }}')
-    result = result.replace("{#", '{{ "{#" }}')
-    return result.replace("\r\n", "\n")
+    # result = result.replace("{{", '{{ "{{" }}')
+    # result = result.replace("{%", '{{ "{%" }}')
+    # result = result.replace("{#", '{{ "{#" }}')
+    ENDRAW_RE = re.compile(r"{%\s*-?\s*endraw\s*-?\s*%}")
+
+    def repl(m):
+        tag = m.group(0)
+        return "{% endraw %}{% raw %}" + tag[:5] + "{% endraw %}{% raw %}" + tag[5:]
+
+    result = ENDRAW_RE.sub(repl, result)
+    result = result.replace("{% endraw %}", '{% endraw %}{{ "{" }}% endraw %}{% raw %}')
+    return "{% raw %}" + result.replace("\r\n", "\n") + "{% endraw %}"
+
 
 class Command(BaseCommand):
     help = "AIエージェントを実行してタスクを完了する"
