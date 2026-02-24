@@ -43,7 +43,7 @@ from todo.models import Todo, TodoList
 def get_todo_list_or_create() -> TodoList:
     """CWDと同じTodoListを取得、なければ自動作成"""
     cwd = os.getcwd()
-    todo_list, created = TodoList.objects.get_or_create(workdir=cwd, defaults={"repository": Path(cwd).name})
+    todo_list, created = TodoList.objects.get_or_create(workdir=cwd)
     return todo_list
 
 
@@ -73,7 +73,7 @@ def validate_branch_name(branch: str) -> str:
     return branch
 
 
-def validate_path(workdir: str, file_path: str) -> str:
+def validate_path(workdir: str, file_path: str, must_exists: bool) -> str:
     """
     ファイルパスがCWD（workdir）内の相対パスかどうか検証する
     親ディレクトリ参照 (..) や絶対パスはエラーとする
@@ -108,7 +108,7 @@ def validate_path(workdir: str, file_path: str) -> str:
         raise ValueError(f"workdir外のパスは指定できません: {file_path}")
 
     # ファイルが実際に存在するか確認
-    if not os.path.exists(resolved):
+    if must_exists and (not os.path.exists(resolved)):
         raise ValueError(f"ファイルが存在しません: {file_path}")
 
     # workdirからの相対パスを返す
@@ -151,11 +151,11 @@ def pushExternalTask(
     # パスを検証して正規化
     validated_ref_files = []
     for f in ref_files:
-        validated_ref_files.append(validate_path(workdir, f))
+        validated_ref_files.append(validate_path(workdir, f, True))
 
     validated_edit_files = []
     for f in edit_files:
-        validated_edit_files.append(validate_path(workdir, f))
+        validated_edit_files.append(validate_path(workdir, f, False))
 
     todo = Todo.objects.create(
         todo_list=todo_list,
@@ -164,7 +164,6 @@ def pushExternalTask(
         prompt=prompt,
         context=context,
         validation_command=validation_command,
-        completed_at=False,
         branch_name="" if validated_branch == "" else f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}",
     )
     return {
@@ -177,54 +176,6 @@ def pushExternalTask(
         "branch_name": todo.branch_name,
         "status": "pending",
     }
-
-
-# @mcp.tool()
-# def popTodo() -> dict:
-#     """未完了タスクを1件取得する（古い順）
-#
-#     Returns:
-#         処理中のTodo情報。未完了タスクがない場合はメッセージのみ
-#     """
-#     todo_list = get_todo_list_or_create()
-#     todo = Todo.objects.filter(
-#         todo_list=todo_list,
-#         completed_at=False
-#     ).order_by('created_at').first()
-#
-#     if todo is None:
-#         return {"message": "未完了のタスクはありません"}
-#
-#     return {
-#         "id": todo.id,
-#         "ref_files": todo.ref_files,
-#         "edit_files": todo.edit_files,
-#         "prompt": todo.prompt,
-#         "context": todo.context,
-#         "validation_command": todo.validation_command,
-#         "status": "processing"
-#     }
-#
-#
-# @mcp.tool()
-# def completeTodo(todo_id: int, output: str) -> dict:
-#     """Todoを完了状態にする
-#
-#     Args:
-#         todo_id: 完了するTodoのID（popTodoで取得したID）
-#         output: 処理結果/出力
-#
-#     Returns:
-#         完了状态になったTodoの情報
-#     """
-#     todo = Todo.objects.get(id=todo_id)
-#     todo.completed_at = True
-#     todo.output = output
-#     todo.save()
-#     return {
-#         "id": todo.id,
-#         "status": "completed"
-#     }
 
 
 def main():

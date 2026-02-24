@@ -5,9 +5,9 @@ REST API経由でTodoを作成するようにしたバージョン
 
 import os
 import uuid
-import httpx
 from pathlib import Path
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("todo-mcp-rest")
@@ -42,7 +42,7 @@ def validate_branch_name(branch: str) -> str:
     return branch
 
 
-def validate_path(workdir: str, file_path: str) -> str:
+def validate_path(workdir: str, file_path: str, must_exists: bool) -> str:
     """
     ファイルパスがCWD（workdir）内の相対パスかどうか検証する
     親ディレクトリ参照 (..) や絶対パスはエラーとする
@@ -125,11 +125,11 @@ def pushExternalTask(
     # パスを検証して正規化
     validated_ref_files = []
     for f in ref_files:
-        validated_ref_files.append(validate_path(workdir, f))
+        validated_ref_files.append(validate_path(workdir, f, True))
 
     validated_edit_files = []
     for f in edit_files:
-        validated_edit_files.append(validate_path(workdir, f))
+        validated_edit_files.append(validate_path(workdir, f, False))
 
     # ブランチ名の生成
     branch_name = "" if validated_branch == "" else f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}"
