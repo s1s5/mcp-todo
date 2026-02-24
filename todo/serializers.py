@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Todo, TodoList, Agent
+from .models import Todo, TodoList, Agent, Extension
 
 
 class AgentSerializer(serializers.ModelSerializer):
@@ -67,4 +67,11 @@ class TodoSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'todo_list': 'workdirまたはtodo_listのいずれかは必須です'
                 })
-        return super().validate(data)
+        return data
+
+
+class ExtensionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Extension
+        fields = ['id', 'name', 'type', 'cmd', 'args', 'envs', 'timeout', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']

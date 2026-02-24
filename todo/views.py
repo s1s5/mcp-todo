@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
-from .models import Todo, TodoList, Agent
-from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer
+from .models import Todo, TodoList, Agent, Extension
+from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, ExtensionSerializer
 
 
 class TodoPagination(PageNumberPagination):
@@ -29,6 +29,14 @@ class AgentViewSet(viewsets.ModelViewSet):
     """
     queryset = Agent.objects.all()
     serializer_class = AgentSerializer
+
+
+class ExtensionViewSet(viewsets.ModelViewSet):
+    """
+    ExtensionのCRUD API
+    """
+    queryset = Extension.objects.all()
+    serializer_class = ExtensionSerializer
 
 
 class TodoViewSet(viewsets.ModelViewSet):
