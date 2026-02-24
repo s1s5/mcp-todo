@@ -138,6 +138,22 @@
 			← 戻る
 		</a>
 		<h1 class="text-2xl font-bold">Todo詳細</h1>
+		<div class="flex items-center gap-2 ml-auto">
+			{#if todo}
+				<a
+					href="/todo/{todo.id}/update/"
+					class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition"
+				>
+					編集
+				</a>
+				<a
+					href="/todo/{todo.id}/delete/"
+					class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition"
+				>
+					削除
+				</a>
+			{/if}
+		</div>
 	</div>
 
 	{#if error}
