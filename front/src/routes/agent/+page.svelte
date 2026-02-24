@@ -72,8 +72,11 @@
 				</thead>
 				<tbody class="bg-white divide-y divide-gray-200">
 					{#each agents as agent}
-						<tr class="hover:bg-gray-50">
-							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+						<tr
+							class="hover:bg-gray-50 cursor-pointer"
+							onclick={() => window.location.href = `/agent/${agent.id}`}
+						>
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
 								{agent.id}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
