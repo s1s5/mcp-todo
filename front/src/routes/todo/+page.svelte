@@ -316,12 +316,12 @@
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
 									<div class="flex gap-2" onclick={(e) => e.stopPropagation()}>
-										{#if todo.status === 'waiting'}
+										{#if todo.status === 'waiting' || todo.status === 'error'}
 											<button
 												onclick={() => startTodo(todo.id)}
 												class="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 transition"
 											>
-												Start
+												{todo.status === 'error' ? 'Retry' : 'Start'}
 											</button>
 										{/if}
 										{#if todo.status === 'waiting' || todo.status === 'queued'}

@@ -168,13 +168,13 @@
 				<div class="flex items-center justify-between">
 					<span class="text-lg font-semibold text-gray-900">ID: {todo.id}</span>
 					<div class="flex items-center gap-2">
-						{#if todo.status === 'waiting'}
+						{#if todo.status === 'waiting' || todo.status === 'error'}
 							<button
 								onclick={() => startTodo(todo.id)}
 								disabled={processingId === todo.id}
 								class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition disabled:opacity-50"
 							>
-								{processingId === todo.id ? 'Starting...' : 'Start'}
+								{processingId === todo.id ? 'Starting...' : (todo.status === 'error' ? 'Retry' : 'Start')}
 							</button>
 						{/if}
 						{#if todo.status === 'waiting' || todo.status === 'queued'}
