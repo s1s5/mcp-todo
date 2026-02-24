@@ -108,7 +108,16 @@ class Command(BaseCommand):
                 current_branch_name = result.stdout.strip()
 
                 self.stdout.write("ブランチ作成: {}".format(branch_name))
-                subprocess.run(["git", "switch", "-c", branch_name, "HEAD"], cwd=workdir, check=True)
+                if self.check_branch_exists(workdir, branch_name):
+                    if self.is_current_branch(workdir, branch_name):
+                        pass
+                    else:
+                        subprocess.run(
+                            ["git", "switch", branch_name], cwd=workdir, capture_output=True, text=True
+                        )
+                else:
+                    self.stdout.write("ブランチ作成: {}".format(branch_name))
+                    subprocess.run(["git", "switch", "-c", branch_name, "HEAD"], cwd=workdir, check=True)
 
                 try:
                     # 5. 指示ファイル作成
@@ -381,7 +390,7 @@ class Command(BaseCommand):
 
     def create_stash(self, workdir):
         self.stdout.write("Stash作成...")
-        subprocess.run(["git", "stash", "-u", "push", "-m", "避難"], cwd=workdir, check=True)
+        subprocess.run(["git", "stash", "push", "-u", "-m", "避難"], cwd=workdir, check=True)
 
         result = subprocess.run(
             ["git", "rev-parse", "stash@{0}"], cwd=workdir, capture_output=True, text=True
