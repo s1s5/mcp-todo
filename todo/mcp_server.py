@@ -180,7 +180,7 @@ def pushExternalTask(
 
 @mcp.tool()
 @sync_to_async
-def get_todos(status: str = "", page: int = 1, limit: int = 10) -> dict:
+def listExternalTask(status: str = "", page: int = 1, limit: int = 10) -> dict:
     """Todo一覧を取得する（ページング対応）
 
     Args:
