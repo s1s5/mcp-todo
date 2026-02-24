@@ -78,6 +78,20 @@
 			</svg>
 		</a>
 		<h1 class="text-2xl font-bold">TodoList Details</h1>
+		{#if todolist}
+			<a
+				href="/todolist/{todolist.id}/update"
+				class="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
+			>
+				Update
+			</a>
+			<a
+				href="/todolist/{todolist.id}/delete"
+				class="px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
+			>
+				Delete
+			</a>
+		{/if}
 		<button
 			onclick={fetchTodoListDetail}
 			class="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
