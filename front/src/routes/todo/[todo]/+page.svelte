@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { marked } from 'marked';
 	import { page } from '$app/stores';
 
@@ -26,6 +26,7 @@
 	let todo: Todo | null = $state(null);
 	let loading = $state(true);
 	let error = $state('');
+	let pollInterval: ReturnType<typeof setInterval> | null = null;
 	let processingId = $state<number | null>(null);
 
 	// CSRFトークンを取得する関数
@@ -57,6 +58,19 @@
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function fetchTodoSilent() {
+		if (loading) return;
+		try {
+			const todoId = $page.params.todo;
+			const res = await fetch(`/api/todos/${todoId}/`);
+			if (!res.ok) return;
+			const data: Todo = await res.json();
+			todo = data;
+		} catch (e) {
+			// Silent fail
 		}
 	}
 
@@ -127,6 +141,18 @@
 
 	onMount(() => {
 		fetchTodo();
+		// statusがrunningのときは5秒ごとにポーリング
+		pollInterval = setInterval(() => {
+			if (todo?.status === 'running' || todo?.status === 'queued') {
+				fetchTodoSilent();
+			}
+		}, 5000);
+	});
+
+	onDestroy(() => {
+		if (pollInterval) {
+			clearInterval(pollInterval);
+		}
 	});
 </script>
 
