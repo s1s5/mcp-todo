@@ -180,24 +180,49 @@ def pushExternalTask(
 
 @mcp.tool()
 @sync_to_async
-def listExternalTask(status: str = "") -> dict:
-    """現在のtodo一覧を取得する
+def get_todos(status: str = "", page: int = 1, limit: int = 10) -> dict:
+    """Todo一覧を取得する（ページング対応）
 
     Args:
         status: ステータスでフィルタリング（waiting, queued, running, completed, error, cancelled, timeout）
                空の場合はすべてのステータスを取得
+        page: ページ番号（1から開始、デフォルト1）
+        limit: 1ページあたりの件数（デフォルト10、最大100）
 
     Returns:
-        todo一覧（ステータスがrunning, queued, waitingのtodoを優先的に表示）
+        todo一覧とページネーション情報
+
+    Note:
+        返り値は created_at の降順（新しい順）
     """
+    # パラメータのバリデーション
+    if page < 1:
+        page = 1
+    if limit < 1:
+        limit = 10
+    if limit > 100:
+        limit = 100
+
     todo_list = get_todo_list_or_create()
 
     # ベースクエリ
     todos = Todo.objects.filter(todo_list=todo_list).select_related("todo_list", "agent").order_by("-created_at")
 
-    # ステータスでフィルタリング
+    # ステータスでフィルタリング（ページネーション前の総件数用）
     if status:
-        todos = todos.filter(status=status)
+        filtered_todos = todos.filter(status=status)
+    else:
+        filtered_todos = todos
+
+    # 総件数を取得
+    total_count = filtered_todos.count()
+
+    # 総ページ数を計算
+    total_pages = (total_count + limit - 1) // limit if total_count > 0 else 1
+
+    # ページネーション
+    offset = (page - 1) * limit
+    paginated_todos = filtered_todos[offset:offset + limit]
 
     # 優先度順にソート: running > queued > waiting > others
     def sort_priority(todo):
@@ -208,11 +233,11 @@ def listExternalTask(status: str = "") -> dict:
         }
         return priority_map.get(todo.status, 3)
 
-    todos = sorted(todos, key=sort_priority)
+    paginated_todos = sorted(paginated_todos, key=sort_priority)
 
     # 結果を作成
     result = []
-    for todo in todos:
+    for todo in paginated_todos:
         # promptを50文字程度に丸める
         prompt_preview = todo.prompt[:50] + "..." if len(todo.prompt) > 50 else todo.prompt
 
@@ -232,10 +257,11 @@ def listExternalTask(status: str = "") -> dict:
 
     return {
         "todos": result,
-        "total": len(result),
-        "filter": status if status else "all",
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "current_page": page,
+        "limit": limit,
     }
-
 
 def prompt_detail(prompt: str) -> str:
     """promptの詳細を返す（最初の100文字程度）"""
