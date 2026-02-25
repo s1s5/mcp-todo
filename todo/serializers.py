@@ -21,8 +21,8 @@ class TodoSerializer(serializers.ModelSerializer):
     workdir = serializers.CharField(source='todo_list.workdir', read_only=True)
     todo_list_name = serializers.CharField(source='todo_list.name', read_only=True)  # 追加
     system_prompt = serializers.CharField(source='agent.system_prompt', read_only=True, allow_null=True)
-    auto_stash = serializers.BooleanField()
-    keep_branch = serializers.BooleanField()
+    auto_stash = serializers.BooleanField(required=False, default=True)
+    keep_branch = serializers.BooleanField(required=False, default=False)
     
     class Meta:
         model = Todo
