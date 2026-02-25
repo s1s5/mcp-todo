@@ -37,13 +37,16 @@
 	let filterStatus = $state('');
 	let newTodosDetected = $state(false);
 	let currentTodoIds: number[] = $state([]);
-	let pollInterval: ReturnType<typeof setInterval> | null = null;
+	let pollInterval: ReturnType<typeof setInterval> | null = $state(null);
 	
 	// ページネーション用
 	let totalCount = $state(0);
 	let currentPage = $state(1);
 	let totalPages = $state(1);
 	const pageSize = 50;
+
+	// Waiting状態のタスク数を監視
+	let waitingTodosCount = $derived(todos.filter(t => t.status === 'waiting').length);
 
 	const statuses = ['', 'waiting', 'queued', 'running', 'completed', 'error', 'cancelled', 'timeout'];
 
@@ -193,6 +196,14 @@
 		}
 	}
 
+	// 全てのwaiting状態のタスクを順番にstartする
+	async function startAllWaiting() {
+		const waitingTodos = todos.filter(t => t.status === 'waiting');
+		for (const todo of waitingTodos) {
+			await startTodo(todo.id);
+		}
+	}
+
 	function getStatusColor(status: string): string {
 		switch (status) {
 			case 'waiting': return 'bg-gray-100 text-gray-800';
@@ -237,6 +248,14 @@
 					<option value={status}>{status}</option>
 				{/each}
 			</select>
+			{#if waitingTodosCount > 0}
+				<button
+					onclick={startAllWaiting}
+					class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+				>
+					全WaitingをStart ({waitingTodosCount})
+				</button>
+			{/if}
 			<button
 				onclick={fetchTodos}
 				class="px-4 py-2 rounded transition {newTodosDetected ? 'bg-yellow-400 text-black animate-pulse' : 'bg-blue-600 text-white hover:bg-blue-700'}"
