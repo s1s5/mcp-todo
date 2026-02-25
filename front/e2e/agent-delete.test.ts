@@ -29,7 +29,7 @@ test.describe('Agent Delete Page', () => {
 		});
 
 		await page.goto(`/agent/${agentId}/delete`);
-		await expect(page).toHaveURL(`/agent/${agentId}/delete`);
+		await expect(page).toHaveURL(`/agent/${agentId}/delete/`);
 	});
 
 	test('2. 確認画面表示: 削除対象の情報と警告メッセージが表示されること', async ({ page }) => {
@@ -58,9 +58,12 @@ test.describe('Agent Delete Page', () => {
 	});
 
 	test('3. 削除実行: 削除ボタンクリックで一覧へリダイレクトされること', async ({ page }) => {
+		// Add delay to make loading state visible
 		await page.route(`/api/agents/${agentId}/`, async (route) => {
 			const method = route.request().method();
 			if (method === 'GET') {
+				// Add delay to simulate network latency for loading visibility
+				await new Promise((resolve) => setTimeout(resolve, 300));
 				await route.fulfill({
 					status: 200,
 					contentType: 'application/json',
@@ -73,6 +76,10 @@ test.describe('Agent Delete Page', () => {
 
 		await page.goto(`/agent/${agentId}/delete`);
 
+		// Test loading state is displayed initially
+		const loadingElement = page.locator('text=Loading...');
+		await expect(loadingElement).toBeVisible();
+
 		// Wait for loading to complete
 		await expect(page.locator('.text-red-600')).toBeVisible();
 
@@ -80,7 +87,7 @@ test.describe('Agent Delete Page', () => {
 		await page.locator('button:has-text("Delete")').click();
 
 		// Should redirect to list page
-		await expect(page).toHaveURL('/agent');
+		await expect(page).toHaveURL('/agent/');
 	});
 
 	test('4. キャンセルボタン: クリックで詳細ページへ戻ること', async ({ page }) => {
@@ -100,8 +107,8 @@ test.describe('Agent Delete Page', () => {
 		// Click cancel button
 		await page.locator('a:has-text("Cancel")').click();
 
-		// Should navigate to detail page
-		await expect(page).toHaveURL(`/agent/${agentId}`);
+		// Should navigate to detail page (SvelteKit adds trailing slash)
+		await expect(page).toHaveURL(`/agent/${agentId}/`);
 	});
 
 	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
