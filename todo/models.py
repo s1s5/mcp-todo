@@ -63,6 +63,7 @@ class Todo(models.Model):
         help_text="使用するエージェント",
     )
     title = models.CharField(max_length=255, default="", help_text="タスクのタイトル")
+    priority = models.IntegerField(default=0, help_text="優先度（数値が大きいほど優先度高）")
     system_prompt = models.TextField(blank=True, help_text="システムプロンプト")
     ref_files = models.JSONField(default=list, help_text="参照用ファイルリスト", blank=True)
     edit_files = models.JSONField(default=list, help_text="編集対象ファイルリスト", blank=True)
