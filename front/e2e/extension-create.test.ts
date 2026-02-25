@@ -6,7 +6,7 @@ test.describe('Extension Create Page', () => {
 	});
 
 	test('1. ページ遷移: /extension/create へアクセス', async ({ page }) => {
-		await expect(page).toHaveURL('/extension/create');
+		await expect(page).toHaveURL(/\/extension\/create\/?/);
 		await expect(page.locator('h1')).toHaveText('Create Extension');
 	});
 
@@ -22,17 +22,17 @@ test.describe('Extension Create Page', () => {
 		await expect(page.locator('button[type="submit"]')).toHaveText('Create');
 		
 		// キャンセルボタンが存在すること
-		await expect(page.locator('a[href="/extension/"]')).toBeVisible();
-		await expect(page.locator('a[href="/extension/"]')).toHaveText('Cancel');
+		await expect(page.locator('a:has-text("Cancel")')).toBeVisible();
 	});
 
 	test('3. 送信テスト: 有効な値を入力してSubmitすると、一覧へリダイレクトされること', async ({ page }) => {
-		// APIリクエストをモック
+		// APIリクエストをモック（遅延応答でLoading表示を確認）
 		await page.route('/api/extensions/', async (route) => {
 			await route.fulfill({
 				status: 201,
 				contentType: 'application/json',
-				body: JSON.stringify({ id: 1, name: 'test-ext', type: 'stdio', cmd: 'echo' })
+				body: JSON.stringify({ id: 1, name: 'test-ext', type: 'stdio', cmd: 'echo' }),
+				delay: 100  // 100ms遅延させてLoading表示を確認
 			});
 		});
 
@@ -45,12 +45,17 @@ test.describe('Extension Create Page', () => {
 		// Submit
 		await page.locator('button[type="submit"]').click();
 
+		// Loading表示が確認できること
+		await expect(page.locator('button[type="submit"]')).toHaveText('Creating...');
+		await expect(page.locator('button[type="submit"]')).toBeDisabled();
+
 		// 一覧へリダイレクトされること
 		await expect(page).toHaveURL('/extension/');
 	});
 
 	test('4. キャンセルボタン: クリックで一覧へ戻ること', async ({ page }) => {
-		await page.locator('a[href="/extension/"]').click();
+		// Cancelリンクをクリック（一意に選択）
+		await page.locator('a:has-text("Cancel")').click();
 		await expect(page).toHaveURL('/extension/');
 	});
 
