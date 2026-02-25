@@ -71,18 +71,21 @@
 				</thead>
 				<tbody class="bg-white divide-y divide-gray-200">
 					{#each todolists as list}
-						<tr class="hover:bg-gray-50 cursor-pointer">
+						<tr 
+							class="hover:bg-gray-50 cursor-pointer"
+							onclick={() => window.location.href = `/todolist/${list.id}`}
+						>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-								<a href="/todolist/{list.id}" class="hover:underline">{list.id}</a>
+								{list.id}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-								<a href="/todolist/{list.id}" class="hover:underline">{list.name}</a>
+								{list.name}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-								<a href="/todolist/{list.id}" class="hover:underline">{list.workdir}</a>
+								{list.workdir}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-								<a href="/todolist/{list.id}" class="hover:underline">{new Date(list.created_at).toLocaleString()}</a>
+								{new Date(list.created_at).toLocaleString()}
 							</td>
 						</tr>
 					{/each}
