@@ -109,9 +109,20 @@ class TodoViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        """タスクをキャンセル statusを 'cancelled' に変更"""
+        """タスクをキャンセル 
+        - queued → waiting に戻す
+        - running → cancelled に変更（task_workerが処理中）
+        - その他 → cancelled
+        """
         todo = self.get_object()
-        todo.status = Todo.Status.CANCELLED
+        
+        if todo.status == Todo.Status.QUEUED:
+            # queued の場合は waiting に戻す
+            todo.status = Todo.Status.WAITING
+        else:
+            # running / その他は cancelled
+            todo.status = Todo.Status.CANCELLED
+        
         todo.save()
         serializer = self.get_serializer(todo)
         return Response(serializer.data)

@@ -98,6 +98,10 @@
 	}
 
 	async function cancelTodo(id: number) {
+		// 楽観的UI更新: ローカルstateを即座に更新
+		if (todo && todo.id === id) {
+			todo.status = todo.status === 'queued' ? 'waiting' : 'cancelled';
+		}
 		processingId = id;
 		try {
 			const csrfToken = getCSRFToken();
@@ -111,6 +115,8 @@
 			if (!res.ok) throw new Error('Failed to cancel');
 			await fetchTodo();
 		} catch (e) {
+			// 失敗時は再取得して元に戻す
+			await fetchTodo();
 			error = e instanceof Error ? e.message : 'Failed to cancel todo';
 		} finally {
 			processingId = null;

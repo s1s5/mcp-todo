@@ -172,7 +172,7 @@
 		// 楽観的UI更新: ローカルstateを即座に更新
 		const previousStatus = todos.find(t => t.id === id)?.status;
 		todos = todos.map(todo => 
-			todo.id === id ? { ...todo, status: 'cancelled' } : todo
+			todo.id === id ? { ...todo, status: todo.status === 'queued' ? 'waiting' : 'cancelled' } : todo
 		);
 		
 		try {
