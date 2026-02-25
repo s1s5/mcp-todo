@@ -4,11 +4,13 @@
 Todoモデルのstatusがqueuedのものを一つずつ取り出し、
 multiprocessingを使って子プロセスでcall_commandを実行する。
 
+todo_list.workdirごとに1つずつ実行可能とし、異なるworkdirのTodoは並列実行できる。
+
 処理流程：
-1. statusがqueuedのTodoを取得（最も古いもの）
-2. statusをrunningに変更
-3. call_commandをmultiprocessingの子プロセスで実行
-4. 定期的にstatusを確認し、cancelledなら子プロセスを強制終了
+1. 実行中のworkdirを確認し、終了/cancelled/timeoutしたら回収
+2. 実行中でないworkdirのqueuedのTodoを取得（最も古いもの）
+3. statusをrunningに変更
+4. call_commandをmultiprocessingの子プロセスで実行
 5. 子プロセス終了後にstatusをcompleted/errorに設定
 6. 1-5を無限ループで繰り返す
 """
@@ -61,6 +63,10 @@ def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue):
 class Command(BaseCommand):
     help = "タスクワーカー：queuedのTodoを実行する"
 
+    # workdirごとの実行情報
+    # workdir -> {'process': Process, 'todo': Todo, 'start_time': float, 'parent_conn': Pipe, 'output_queue': Queue, 'stdout_lines': list, 'stderr_lines': list}
+    running_workdirs: dict
+
     def add_arguments(self, parser):
         parser.add_argument(
             "--interval",
@@ -71,110 +77,78 @@ class Command(BaseCommand):
 
     def handle(self, interval: int, **options):
         self.stdout.write(self.style.SUCCESS("タスクワーカーを開始しました"))
+        self.running_workdirs = {}
 
         while True:
-            self.process_next_todo(interval)
+            self.process_loop(interval)
 
-    def process_next_todo(self, interval: int):
-        """次のTodoを取得して処理"""
-        # statusがqueuedの最も古いTodoを取得
+    def process_loop(self, interval: int):
+        """メインループ：実行中プロセスをチェックし、新しいTodoを起動"""
+        # 1. 実行中のプロセスをチェックし、終了/cancelled/timeoutしたら回収
+        self.check_running_processes()
+
+        # 2. 実行中のworkdirを除いたqueuedのTodoを priority降順・created昇順で取得
         try:
-            todo = Todo.objects.filter(status=Todo.Status.QUEUED).order_by("created_at").first()
+            running_workdir_list = list(self.running_workdirs.keys())
+            if running_workdir_list:
+                todos = Todo.objects.filter(
+                    status=Todo.Status.QUEUED,
+                    todo_list__workdir__notin=running_workdir_list
+                ).order_by("-priority", "created_at")
+            else:
+                todos = Todo.objects.filter(
+                    status=Todo.Status.QUEUED
+                ).order_by("-priority", "created_at")
+            next_todo = todos.first()
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Todo取得エラー: {e}"))
             time.sleep(interval)
             return
 
-        if todo is None:
-            # self.stdout.write("queuedのTodoがありません。待機中...")
+        if next_todo is None:
             time.sleep(interval)
             return
 
-        self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始"))
-        self.stdout.write(f"  タイムアウト: {todo.timeout}秒")
+        # 3. 空いているworkdirがあれば新しいTodoを起動
+        self.start_todo(next_todo)
 
-        # ステータスをrunningに変更
-        todo.status = Todo.Status.RUNNING
-        todo.save()
+    def check_running_processes(self):
+        """実行中のプロセスをチェックし、終了/cancelled/timeoutしたら回収"""
+        finished_workdirs = []
 
-        # multiprocessingで子プロセスを起動
-        self.run_task_with_multiprocessing(todo, interval)
+        for workdir, info in self.running_workdirs.items():
+            process = info['process']
+            todo = info['todo']
+            start_time = info['start_time']
+            parent_conn = info['parent_conn']
+            output_queue = info['output_queue']
+            stdout_lines = info['stdout_lines']
+            stderr_lines = info['stderr_lines']
+            timeout_seconds = todo.timeout
 
-    def run_task_with_multiprocessing(self, todo: Todo, interval: int):
-        """multiprocessingを使ってcall_commandを実行"""
-        parent_conn, child_conn = Pipe()
-        output_queue = Queue()
-
-        process = Process(target=run_task_in_subprocess, args=(todo.pk, child_conn, output_queue))
-        process.start()
-
-        self.stdout.write(f"Todo #{todo.pk} を子プロセスで実行中 (PID: {process.pid})...")
-
-        # 出力ためる用のバッファ
-        stdout_lines = []
-        stderr_lines = []
-
-        # タイムアウト用
-        start_time = time.time()
-        timeout_seconds = todo.timeout
-
-        try:
-            while True:
-                # 定期的にステータスを確認
+            try:
+                # DBから最新の状態を取得
                 todo.refresh_from_db()
 
                 # cancelledチェック
                 if todo.status == Todo.Status.CANCELLED:
-                    self.stdout.write(self.style.WARNING(f"Todo #{todo.id} がcancelledされました"))
-                    # 子プロセスを強制終了
-                    process.terminate()
-                    try:
-                        process.join(timeout=5)
-                    except:
-                        process.kill()
-                        process.join()
-
-                    todo.status = Todo.Status.CANCELLED
+                    self.stdout.write(self.style.WARNING(f"Todo #{todo.id} (workdir: {workdir}) がcancelledされました"))
+                    self.terminate_process(process)
                     todo.output = "=== CANCELLED ===\nCancelled by user"
                     todo.save()
-                    return
+                    finished_workdirs.append(workdir)
+                    continue
 
                 # タイムアウトチェック
                 elapsed = time.time() - start_time
                 if elapsed >= timeout_seconds:
-                    self.stdout.write(self.style.ERROR(f"Todo #{todo.id} がタイムアウトしました（{timeout_seconds}秒）"))
-                    # 子プロセスを強制終了
-                    process.terminate()
-                    try:
-                        process.join(timeout=5)
-                    except:
-                        process.kill()
-                        process.join()
-
+                    self.stdout.write(self.style.ERROR(f"Todo #{todo.id} (workdir: {workdir}) がタイムアウトしました（{timeout_seconds}秒）"))
+                    self.terminate_process(process)
                     todo.status = Todo.Status.TIMEOUT
                     todo.output = f"=== TIMEOUT ===\nTimed out after {timeout_seconds} seconds"
                     todo.save()
-                    return
-
-                # リアルタイムでQueueから出力を読み取り
-                try:
-                    while True:
-                        try:
-                            stream_name, line = output_queue.get_nowait()
-                            # 親プロセスのstdout/stderrにリアルタイム出力
-                            if stream_name == "stdout":
-                                self.stdout.write(line, ending="")
-                            else:
-                                self.stderr.write(line, ending="")
-                            # 結果ため込み
-                            if stream_name == "stdout":
-                                stdout_lines.append(line)
-                            else:
-                                stderr_lines.append(line)
-                        except:
-                            break
-                except:
-                    pass
+                    finished_workdirs.append(workdir)
+                    continue
 
                 # プロセスが終了したか確認
                 if not process.is_alive():
@@ -189,10 +163,6 @@ class Command(BaseCommand):
                         while True:
                             stream_name, line = output_queue.get_nowait()
                             if stream_name == "stdout":
-                                self.stdout.write(line, ending="")
-                            else:
-                                self.stderr.write(line, ending="")
-                            if stream_name == "stdout":
                                 stdout_lines.append(line)
                             else:
                                 stderr_lines.append(line)
@@ -202,27 +172,61 @@ class Command(BaseCommand):
                     result["stdout"] = "".join(stdout_lines)
                     result["stderr"] = "".join(stderr_lines)
                     self.handle_subprocess_result(todo, result)
-                    break
+                    finished_workdirs.append(workdir)
 
-                time.sleep(0.1)
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"プロセス確認中にエラー発生 (workdir: {workdir}): {e}"))
+                finished_workdirs.append(workdir)
 
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"エラーが発生しました: {e}"))
-            todo.status = Todo.Status.ERROR
-            todo.output = f"""=== ERROR ===
-{str(e)}
-"""
-            todo.save()
+        # 完了したworkdirを削除
+        for workdir in finished_workdirs:
+            if workdir in self.running_workdirs:
+                del self.running_workdirs[workdir]
 
-        finally:
-            # プロセスがまだ生きている場合は終了させる
-            if process.is_alive():
-                process.terminate()
-                try:
-                    process.join(timeout=5)
-                except:
-                    process.kill()
-                    process.join()
+    def terminate_process(self, process):
+        """プロセスを終了させる"""
+        if process.is_alive():
+            process.terminate()
+            try:
+                process.join(timeout=5)
+            except:
+                process.kill()
+                process.join()
+
+    def start_todo(self, todo: Todo):
+        """新しいTodoを起動"""
+        workdir = todo.todo_list.workdir
+
+        self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始 (workdir: {workdir})"))
+        self.stdout.write(f"  タイムアウト: {todo.timeout}秒")
+
+        # ステータスをrunningに変更
+        todo.status = Todo.Status.RUNNING
+        todo.save()
+
+        # multiprocessingで子プロセスを起動
+        self.run_task_with_multiprocessing(todo, workdir)
+
+    def run_task_with_multiprocessing(self, todo: Todo, workdir: str):
+        """multiprocessingを使ってcall_commandを実行"""
+        parent_conn, child_conn = Pipe()
+        output_queue = Queue()
+
+        process = Process(target=run_task_in_subprocess, args=(todo.pk, child_conn, output_queue))
+        process.start()
+
+        self.stdout.write(f"Todo #{todo.pk} を子プロセスで実行中 (PID: {process.pid}, workdir: {workdir})...")
+
+        # running_workdirsに追加
+        self.running_workdirs[workdir] = {
+            'process': process,
+            'todo': todo,
+            'start_time': time.time(),
+            'parent_conn': parent_conn,
+            'output_queue': output_queue,
+            'stdout_lines': [],
+            'stderr_lines': [],
+        }
 
     def handle_subprocess_result(self, todo: Todo, result: dict):
         """子プロセスの結果を処理"""
