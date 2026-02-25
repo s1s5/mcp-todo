@@ -118,7 +118,8 @@ test.describe('TodoList Update Page', () => {
 		await expect(nameInput).toHaveValue(mockTodoList.name);
 		await expect(workdirInput).toHaveValue(mockTodoList.workdir);
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot
+		const html = await page.content();
+		expect(html).toMatchSnapshot('todolist-update.html');
 	});
 });
