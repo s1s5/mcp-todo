@@ -32,11 +32,12 @@
 </script>
 
 <div class="p-6 max-w-4xl mx-auto">
-	<a href="/" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">← 戻る</a>
+	<a href="/" id="back-link" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">← 戻る</a>
 	
 	<div class="flex justify-between items-center mb-6">
 		<h1 class="text-2xl font-bold">Todo Lists</h1>
 		<button
+			id="refresh-button"
 			onclick={fetchTodoLists}
 			class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
 		>
@@ -45,13 +46,13 @@
 	</div>
 
 	{#if loading}
-		<p class="text-gray-500">Loading...</p>
+		<p id="loading-indicator" class="text-gray-500">Loading...</p>
 	{:else if error}
 		<p class="text-red-500">{error}</p>
 	{:else if todolists.length === 0}
-		<p class="text-gray-500">No TodoLists found.</p>
+		<p id="empty-message" class="text-gray-500">No TodoLists found.</p>
 	{:else}
-		<div class="bg-white shadow rounded-lg overflow-hidden">
+		<div id="todolist-table" class="bg-white shadow rounded-lg overflow-hidden">
 			<table class="min-w-full divide-y divide-gray-200">
 				<thead class="bg-gray-50">
 					<tr>
