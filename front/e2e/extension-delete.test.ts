@@ -125,6 +125,7 @@ test.describe('Extension Delete Page', () => {
 		await expect(cancelButton).toBeVisible();
 
 		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		const html = await page.content();
+		expect(html).toMatchSnapshot('extension-delete.html');
 	});
 });
