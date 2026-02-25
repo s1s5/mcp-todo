@@ -15,6 +15,11 @@ dependencies = [
 [tool.setuptools]
 py-modules = ["config", "todo"]
 
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py", "*_test.py"]
+addopts = "--reuse-db --create-db"
+
 # uv tool install . --editable
 [project.scripts]
 todo-mcp = "todo.mcp_server:main"
