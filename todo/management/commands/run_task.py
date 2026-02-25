@@ -449,6 +449,10 @@ class Command(BaseCommand):
 
     def restore_stash(self, workdir, stash_hash):
         self.stdout.write("Stashを復元...")
-        subprocess.run(["git", "stash", "pop", stash_hash], cwd=workdir, check=True)
-        self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
-        self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
+        try:
+            subprocess.run(["git", "stash", "pop", stash_hash], cwd=workdir, check=True)
+        except Exception as e:
+            self.stderr.write(self.style.WARNING(f"Stashを復元することができませんでした。{e}"))
+        else:
+            self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
+
