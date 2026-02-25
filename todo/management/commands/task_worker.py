@@ -16,6 +16,7 @@ todo_list.workdirごとに1つずつ実行可能とし、異なるworkdirのTodo
 """
 
 import os
+import subprocess
 import time
 from multiprocessing import Pipe, Process, Queue
 
@@ -25,7 +26,7 @@ from django.core.management.base import BaseCommand
 from todo.models import Todo
 
 
-def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue):
+def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue, worktree_root: str):
     """子プロセスでcall_commandを実行"""
     import sys
 
@@ -43,7 +44,8 @@ def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue):
         call_command(
             "run_task",
             todo_pk=todo_pk,
-            inplace=True,
+            inplace=False,
+            worktree_root=worktree_root,
             # agent_quiet=True,
             stdout=parent_stdout,
             stderr=parent_stderr,
@@ -74,10 +76,17 @@ class Command(BaseCommand):
             default=2,
             help="ステータス確認の間隔（秒）",
         )
+        parser.add_argument(
+            "--worktree-root",
+            type=str,
+            default="~/work/worktrees",
+            help="worktreeのルートディレクトリ",
+        )
 
-    def handle(self, interval: int, **options):
+    def handle(self, interval: int, worktree_root: str, **options):
         self.stdout.write(self.style.SUCCESS("タスクワーカーを開始しました"))
         self.running_workdirs = {}
+        self.worktree_root = os.path.expanduser(worktree_root)
 
         while True:
             self.process_loop(interval)
@@ -128,6 +137,7 @@ class Command(BaseCommand):
             stdout_lines = info['stdout_lines']
             stderr_lines = info['stderr_lines']
             timeout_seconds = todo.timeout
+            worktree_path = info.get('worktree_path')
 
             try:
                 # DBから最新の状態を取得
@@ -139,6 +149,9 @@ class Command(BaseCommand):
                     self.terminate_process(process)
                     todo.output = "=== CANCELLED ===\nCancelled by user"
                     todo.save()
+                    # worktreeクリーンアップ
+                    if worktree_path:
+                        self.cleanup_worktree(worktree_path, workdir)
                     finished_workdirs.append(workdir)
                     continue
 
@@ -150,6 +163,9 @@ class Command(BaseCommand):
                     todo.status = Todo.Status.TIMEOUT
                     todo.output = f"=== TIMEOUT ===\nTimed out after {timeout_seconds} seconds"
                     todo.save()
+                    # worktreeクリーンアップ
+                    if worktree_path:
+                        self.cleanup_worktree(worktree_path, workdir)
                     finished_workdirs.append(workdir)
                     continue
 
@@ -200,7 +216,19 @@ class Command(BaseCommand):
         """新しいTodoを起動"""
         workdir = todo.todo_list.workdir
 
+        # branch_name が未設定の場合は生成して保存
+        if not todo.branch_name:
+            import random
+            import string
+            from datetime import datetime
+
+            now = datetime.now()
+            random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
+            todo.branch_name = "ai/{}/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
+            todo.save(update_fields=['branch_name'])
+
         self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始 (workdir: {workdir})"))
+        self.stdout.write(f"  ブランチ: {todo.branch_name}")
         self.stdout.write(f"  タイムアウト: {todo.timeout}秒")
 
         # ステータスをrunningに変更
@@ -215,10 +243,13 @@ class Command(BaseCommand):
         parent_conn, child_conn = Pipe()
         output_queue = Queue()
 
-        process = Process(target=run_task_in_subprocess, args=(todo.pk, child_conn, output_queue))
+        # worktree パスを計算して保存
+        worktree_path = self.get_worktree_path(workdir, todo.branch_name)
+
+        process = Process(target=run_task_in_subprocess, args=(todo.pk, child_conn, output_queue, self.worktree_root))
         process.start()
 
-        self.stdout.write(f"Todo #{todo.pk} を子プロセスで実行中 (PID: {process.pid}, workdir: {workdir})...")
+        self.stdout.write(f"Todo #{todo.pk} を子プロセスで実行中 (PID: {process.pid}, workdir: {workdir}, worktree: {worktree_path})...")
 
         # running_workdirsに追加
         self.running_workdirs[workdir] = {
@@ -229,6 +260,7 @@ class Command(BaseCommand):
             'output_queue': output_queue,
             'stdout_lines': [],
             'stderr_lines': [],
+            'worktree_path': worktree_path,
         }
 
     def handle_subprocess_result(self, todo: Todo, result: dict):
@@ -263,3 +295,36 @@ class Command(BaseCommand):
             )
 
         todo.save()
+
+    def get_worktree_path(self, workdir: str, branch_name: str) -> str:
+        """worktree パスを計算する
+
+        run_task.py の create_worktree メソッドと 동일한 로직
+        """
+        rel_path = os.path.relpath(workdir, os.path.expanduser("~/"))
+        path_slug = rel_path.replace("/", "-").replace(".", "")
+        branch_slug = branch_name.replace("/", "-")
+        return os.path.join(self.worktree_root, "{}-{}".format(path_slug, branch_slug))
+
+    def cleanup_worktree(self, worktree_path: str, workdir: str):
+        """worktree を削除する
+
+        run_task.py の cleanup_worktree 메서드와 동등한 처리
+        """
+        self.stdout.write(f"Worktree 클린업: {worktree_path}")
+        try:
+            # worktree 가 존재하는지 확인
+            if os.path.exists(worktree_path):
+                subprocess.run(
+                    ["git", "worktree", "remove", worktree_path],
+                    cwd=workdir,
+                    check=True,
+                    capture_output=True,
+                )
+                self.stdout.write(self.style.SUCCESS(f"Worktree를 삭제했습니다: {worktree_path}"))
+            else:
+                self.stdout.write(self.style.WARNING(f"Worktree가 존재하지 않습니다: {worktree_path}"))
+        except subprocess.CalledProcessError as e:
+            self.stdout.write(self.style.ERROR(f"Worktree 삭제에 실패했습니다: {e.stderr}"))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Worktree 삭제 중 오류 발생: {e}"))
