@@ -86,6 +86,7 @@
 		<a
 			href="/extension/{extensionId}/"
 			class="text-blue-600 hover:text-blue-800 inline-flex items-center"
+			id="back-link"
 		>
 			← Back to Detail
 		</a>
@@ -94,14 +95,14 @@
 	<h1 class="text-2xl font-bold mb-6">Delete Extension</h1>
 
 	{#if loading}
-		<p class="text-gray-500">Loading...</p>
+		<p class="text-gray-500" id="loading-indicator">Loading...</p>
 	{:else if error}
-		<p class="text-red-500">{error}</p>
+		<p class="text-red-500" id="error-message">{error}</p>
 	{:else if extension}
 		<div class="bg-white shadow rounded-lg p-6">
-			<div class="mb-6">
+			<div class="mb-6" id="warning-message">
 				<h2 class="text-lg font-semibold text-red-600 mb-2">⚠️ このExtensionを削除しますか？</h2>
-				<p class="text-gray-600">この操作は取り消せません。</p>
+				<p class="text-gray-600" id="warning-text">この操作は取り消せません。</p>
 			</div>
 
 			<div class="bg-gray-50 rounded-lg p-4 mb-6">
@@ -146,7 +147,7 @@
 			</div>
 
 			{#if deleteError}
-				<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
+				<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm" id="delete-error">
 					{deleteError}
 				</div>
 			{/if}
@@ -156,12 +157,14 @@
 					onclick={handleDelete}
 					disabled={deleting}
 					class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+					id="delete-button"
 				>
 					{deleting ? 'Deleting...' : 'Delete'}
 				</button>
 				<a
 					href="/extension/{extensionId}/"
 					class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+					id="cancel-button"
 				>
 					Cancel
 				</a>
