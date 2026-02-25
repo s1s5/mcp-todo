@@ -102,7 +102,7 @@ test.describe('Todo Create Page', () => {
 		const agentInput = page.locator('#agent');
 		const statusSelect = page.locator('#status');
 		const createButton = page.locator('button[type="submit"]');
-		const cancelButton = page.locator('a[href="/todo/"]');
+		const cancelButton = page.locator('a[href="/todo/"].px-4');
 
 		await expect(promptInput).toBeVisible();
 		await expect(workdirInput).toBeVisible();
@@ -111,7 +111,8 @@ test.describe('Todo Create Page', () => {
 		await expect(createButton).toBeVisible();
 		await expect(cancelButton).toBeVisible();
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot
+		const html = await page.content();
+		expect(html).toMatchSnapshot('snapshot.html');
 	});
 });
