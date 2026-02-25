@@ -72,6 +72,7 @@
 	<div class="flex items-center gap-4 mb-6">
 		<a
 			href="/todolist"
+			id="back-link"
 			class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -82,12 +83,14 @@
 		{#if todolist}
 			<a
 				href="/todolist/{todolist.id}/update"
+				id="update-link"
 				class="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
 			>
 				Update
 			</a>
 			<a
 				href="/todolist/{todolist.id}/delete"
+				id="delete-link"
 				class="px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
 			>
 				Delete
@@ -95,6 +98,7 @@
 		{/if}
 		<button
 			onclick={fetchTodoListDetail}
+			id="refresh-button"
 			class="ml-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
 		>
 			Refresh
@@ -102,7 +106,7 @@
 	</div>
 
 	{#if loading}
-		<p class="text-gray-500">Loading...</p>
+		<p id="loading-indicator" class="text-gray-500">Loading...</p>
 	{:else if error}
 		<p class="text-red-500">{error}</p>
 	{:else if !todolist}
