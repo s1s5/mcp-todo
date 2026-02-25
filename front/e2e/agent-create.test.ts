@@ -122,7 +122,7 @@ test.describe('Agent Create Page', () => {
 		const createButton = page.locator('button[type="submit"]');
 		await expect(createButton).toBeVisible();
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot
+		await expect(page).toMatchSnapshot();
 	});
 });
