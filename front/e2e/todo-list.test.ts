@@ -2,9 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Todo List Page', () => {
 	test('should display loading then table or empty message', async ({ page }) => {
-		// Mock response with data
-		await page.route('/api/todos/', async (route) => {
+		// Mock response with data - use wildcard to match query params
+		// Add delay to allow loading indicator to be visible
+		await page.route('**/api/todos/**', async (route) => {
+			await new Promise(resolve => setTimeout(resolve, 100));
 			await route.fulfill({
+				status: 200,
 				json: {
 					count: 1,
 					next: null,
@@ -57,9 +60,12 @@ test.describe('Todo List Page', () => {
 	});
 
 	test('should display loading then empty message when no todos', async ({ page }) => {
-		// Mock empty response
-		await page.route('/api/todos/', async (route) => {
+		// Mock empty response - use wildcard to match query params
+		// Add delay to allow loading indicator to be visible
+		await page.route('**/api/todos/**', async (route) => {
+			await new Promise(resolve => setTimeout(resolve, 100));
 			await route.fulfill({
+				status: 200,
 				json: {
 					count: 0,
 					next: null,
@@ -87,8 +93,8 @@ test.describe('Todo List Page', () => {
 	});
 
 	test('should navigate back to home on back link click', async ({ page }) => {
-		// Mock empty response
-		await page.route('/api/todos/', async (route) => {
+		// Mock empty response - use wildcard to match query params
+		await page.route('**/api/todos/**', async (route) => {
 			await route.fulfill({
 				json: {
 					count: 0,
@@ -116,8 +122,8 @@ test.describe('Todo List Page', () => {
 	});
 
 	test('should take snapshot after page is stabilized', async ({ page }) => {
-		// Mock response with data
-		await page.route('/api/todos/', async (route) => {
+		// Mock response with data - use wildcard to match query params
+		await page.route('**/api/todos/**', async (route) => {
 			await route.fulfill({
 				json: {
 					count: 1,
