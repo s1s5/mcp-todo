@@ -85,7 +85,7 @@ emoji = {
 def select_emoji(prompt: str):
     client = Client(host=os.environ["OLLAMA_HOST"])
 
-    emoji_content = "\n".join([f"'{key}' : {value}" for key, value in emoji])
+    emoji_content = "\n".join([f"'{key}' : {value}" for key, value in emoji.items()])
 
     response = client.chat(
         model=os.environ["OLLAMA_MODEL"],
@@ -111,8 +111,7 @@ def select_emoji(prompt: str):
             },
         ],
     )
-
-    e = response["choices"][0]["message"]["content"]
+    e = response["message"]["content"]
     if e not in emoji:
         raise Exception("絵文字の選択に失敗しました")
     return e
