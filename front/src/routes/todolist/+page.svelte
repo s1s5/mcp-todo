@@ -3,6 +3,7 @@
 
 	interface TodoList {
 		id: number;
+		name: string;
 		workdir: string;
 		created_at: string;
 	}
@@ -58,6 +59,9 @@
 							ID
 						</th>
 						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+							Name
+						</th>
+						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 							Workdir
 						</th>
 						<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -70,6 +74,9 @@
 						<tr class="hover:bg-gray-50 cursor-pointer">
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
 								<a href="/todolist/{list.id}" class="hover:underline">{list.id}</a>
+							</td>
+							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+								<a href="/todolist/{list.id}" class="hover:underline">{list.name}</a>
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
 								<a href="/todolist/{list.id}" class="hover:underline">{list.workdir}</a>
