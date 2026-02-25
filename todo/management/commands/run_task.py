@@ -401,8 +401,8 @@ class Command(BaseCommand):
             emoji = select_emoji(
                 "\n".join(["# {}".format(todo.title), "# 修正内容", todo.prompt, "# 結果", stdout_output])
             )
-        except Exception:
-            pass
+        except Exception as e:
+            self.stderr.write(self.style.ERROR("絵文字選択エラー: {}".format(e)))
         message = todo.title or "AI Generated Update"
         if len(message) > 50:
             message = message[:47] + "..."
