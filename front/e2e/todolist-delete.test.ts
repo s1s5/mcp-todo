@@ -115,7 +115,8 @@ test.describe('TodoList Delete Page', () => {
 		await expect(deleteButton).toBeVisible();
 		await expect(cancelButton).toBeVisible();
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot
+		const html = await page.content();
+		expect(html).toMatchSnapshot('todolist-delete.html');
 	});
 });
