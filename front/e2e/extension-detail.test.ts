@@ -93,5 +93,6 @@ test('extension detail page displays loading then shows extension info', async (
 	const detailsCard = page.locator('h2:has-text("Information")');
 	await expect(detailsCard).toBeVisible();
 
-	await expect(page).toHaveScreenshot();
+	// HTMLスナップショットテスト
+	await expect(page.locator('body')).toMatchAriaSnapshot();
 });

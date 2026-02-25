@@ -1,0 +1,29 @@
+- list
+- link:
+  - /url: /extension/
+  - img
+- heading "Extension Details" [level=1]
+- link "編集":
+  - /url: /extension/1/update/
+- link "削除":
+  - /url: /extension/1/delete/
+- button "Refresh"
+- heading "Information" [level=2]
+- term: ID
+- definition: "1"
+- term: Name
+- definition: Test Extension
+- term: Type
+- definition: stdio
+- term: Command
+- definition: command
+- term: Args
+- definition: "[\"arg1\"]"
+- term: Envs
+- definition: "{ \"KEY\": \"value\" }"
+- term: Timeout
+- definition: /\d+ seconds/
+- term: Created
+- definition: /1\/1\/\d+, 9:\d+:\d+ AM/
+- term: Updated
+- definition: /1\/2\/\d+, 9:\d+:\d+ AM/
