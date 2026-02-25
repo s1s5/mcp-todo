@@ -23,7 +23,7 @@ test.describe('Agent List Page', () => {
 
 		// Take snapshot after display is stable
 		await expect(emptyMessage).toBeVisible();
-		await expect(page).toHaveScreenshot();
+		await expect(await page.content()).toMatchSnapshot('agent-list-empty.html');
 	});
 
 	test('should display table with data', async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe('Agent List Page', () => {
 
 		// Take snapshot after display is stable
 		await expect(table).toBeVisible();
-		await expect(page).toHaveScreenshot();
+		await expect(await page.content()).toMatchSnapshot('agent-list-data.html');
 	});
 
 	test('should navigate back to home on back link click', async ({ page }) => {
