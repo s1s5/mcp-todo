@@ -2,10 +2,11 @@
 
 import os
 import tempfile
+from unittest.mock import MagicMock
 
 import pytest
 
-from todo.mcp_server import validate_branch_name, validate_path
+from todo.mcp_server import validate_branch_name, validate_path, sort_priority
 
 
 class TestValidateBranchName:
@@ -171,3 +172,69 @@ class TestValidatePath:
 
         result = validate_path(workdir, "mydir", False)
         assert result == "mydir"
+
+
+class TestSortPriority:
+    """sort_priority のユニットテスト"""
+
+    def _create_mock_todo(self, status: str):
+        """MockのTodoオブジェクトを作成"""
+        todo = MagicMock()
+        todo.status = status
+        return todo
+
+    def test_running_priority_zero(self):
+        """running → 優先度0"""
+        todo = self._create_mock_todo("running")
+        assert sort_priority(todo) == 0
+
+    def test_queued_priority_one(self):
+        """queued → 優先度1"""
+        todo = self._create_mock_todo("queued")
+        assert sort_priority(todo) == 1
+
+    def test_waiting_priority_two(self):
+        """waiting → 優先度2"""
+        todo = self._create_mock_todo("waiting")
+        assert sort_priority(todo) == 2
+
+    def test_completed_priority_three(self):
+        """completed → 優先度3（其他ステータス）"""
+        todo = self._create_mock_todo("completed")
+        assert sort_priority(todo) == 3
+
+    def test_error_priority_three(self):
+        """error → 優先度3（其他ステータス）"""
+        todo = self._create_mock_todo("error")
+        assert sort_priority(todo) == 3
+
+    def test_cancelled_priority_three(self):
+        """cancelled → 優先度3（其他ステータス）"""
+        todo = self._create_mock_todo("cancelled")
+        assert sort_priority(todo) == 3
+
+    def test_timeout_priority_three(self):
+        """timeout → 優先度3（其他ステータス）"""
+        todo = self._create_mock_todo("timeout")
+        assert sort_priority(todo) == 3
+
+    def test_unknown_status_priority_three(self):
+        """未知のステータス → 優先度3"""
+        todo = self._create_mock_todo("unknown_status")
+        assert sort_priority(todo) == 3
+
+    def test_priority_ordering(self):
+        """優先度の順序確認: running < queued < waiting < others"""
+        running = self._create_mock_todo("running")
+        queued = self._create_mock_todo("queued")
+        waiting = self._create_mock_todo("waiting")
+        completed = self._create_mock_todo("completed")
+
+        priorities = [
+            sort_priority(running),
+            sort_priority(queued),
+            sort_priority(waiting),
+            sort_priority(completed),
+        ]
+
+        assert priorities == [0, 1, 2, 3]

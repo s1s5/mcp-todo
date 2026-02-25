@@ -229,14 +229,6 @@ def listExternalTask(status: str = "", page: int = 1, limit: int = 10) -> dict:
     paginated_todos = filtered_todos[offset:offset + limit]
 
     # 優先度順にソート: running > queued > waiting > others
-    def sort_priority(todo):
-        priority_map = {
-            "running": 0,
-            "queued": 1,
-            "waiting": 2,
-        }
-        return priority_map.get(todo.status, 3)
-
     paginated_todos = sorted(paginated_todos, key=sort_priority)
 
     # 結果を作成
@@ -272,6 +264,23 @@ def prompt_detail(prompt: str) -> str:
     if len(prompt) <= 100:
         return prompt
     return prompt[:100] + "..."
+
+
+def sort_priority(todo) -> int:
+    """ステータスに応じたソート優先度を返す
+
+    Args:
+        todo: Todo モデルインスタンス
+
+    Returns:
+        優先度（0=最優先、3=最低優先度）
+    """
+    priority_map = {
+        "running": 0,
+        "queued": 1,
+        "waiting": 2,
+    }
+    return priority_map.get(todo.status, 3)
 
 
 def main():
