@@ -22,6 +22,14 @@
 		prompt: string;
 		status: string;
 		branch_name: string | null;
+		title: string | null;
+		ref_files: string[] | null;
+		edit_files: string[] | null;
+		context: string | null;
+		validation_command: string | null;
+		timeout: number | null;
+		auto_stash: boolean;
+		keep_branch: boolean;
 	}
 
 	let todo: Todo | null = $state(null);
@@ -37,6 +45,14 @@
 	let formTodoList = $state<number | null>(null);
 	let formAgent = $state<number | null>(null);
 	let formBranch = $state('');
+	let formTitle = $state('');
+	let formRefFiles = $state('');
+	let formEditFiles = $state('');
+	let formContext = $state('');
+	let formValidationCommand = $state('');
+	let formTimeout = $state<number | null>(null);
+	let formAutoStash = $state(true);
+	let formKeepBranch = $state(false);
 
 	// CSRFトークンを取得する関数
 	function getCSRFToken(): string {
@@ -71,6 +87,14 @@
 				formTodoList = todo.todo_list;
 				formAgent = todo.agent;
 				formBranch = todo.branch_name || '';
+				formTitle = todo.title || '';
+				formRefFiles = (todo.ref_files || []).join('\n');
+				formEditFiles = (todo.edit_files || []).join('\n');
+				formContext = todo.context || '';
+				formValidationCommand = todo.validation_command || '';
+				formTimeout = todo.timeout;
+				formAutoStash = todo.auto_stash ?? true;
+				formKeepBranch = todo.keep_branch ?? false;
 			}
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
@@ -123,6 +147,21 @@
 				payload.branch_name = formBranch;
 			} else {
 				payload.branch_name = null;
+			}
+
+			// 新しいフィールド
+			payload.title = formTitle || null;
+			payload.ref_files = formRefFiles.split('\n').filter(line => line.trim());
+			payload.edit_files = formEditFiles.split('\n').filter(line => line.trim());
+			payload.context = formContext || null;
+			payload.validation_command = formValidationCommand || null;
+			payload.auto_stash = formAutoStash;
+			payload.keep_branch = formKeepBranch;
+
+			if (formTimeout !== null) {
+				payload.timeout = formTimeout;
+			} else {
+				payload.timeout = null;
 			}
 
 			const res = await fetch(`/api/todos/${todoId}/`, {
@@ -246,6 +285,107 @@
 						placeholder="branch-name"
 						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 					/>
+				</div>
+
+				<!-- Title -->
+				<div>
+					<label for="title" class="block text-sm font-medium text-gray-700 mb-2">
+						Title
+					</label>
+					<input
+						type="text"
+						id="title"
+						bind:value={formTitle}
+						placeholder="タスクのタイトル"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				</div>
+
+				<!-- ref_files -->
+				<div>
+					<label for="ref_files" class="block text-sm font-medium text-gray-700 mb-2">
+						参照ファイル (ref_files)
+					</label>
+					<textarea
+						id="ref_files"
+						bind:value={formRefFiles}
+						rows="4"
+						placeholder="file1.txt&#10;file2.txt"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+					></textarea>
+				</div>
+
+				<!-- edit_files -->
+				<div>
+					<label for="edit_files" class="block text-sm font-medium text-gray-700 mb-2">
+						編集ファイル (edit_files)
+					</label>
+					<textarea
+						id="edit_files"
+						bind:value={formEditFiles}
+						rows="4"
+						placeholder="file1.txt&#10;file2.txt"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+					></textarea>
+				</div>
+
+				<!-- context -->
+				<div>
+					<label for="context" class="block text-sm font-medium text-gray-700 mb-2">
+						コンテキスト (context)
+					</label>
+					<textarea
+						id="context"
+						bind:value={formContext}
+						rows="4"
+						placeholder="追加のコンテキスト情報"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+					></textarea>
+				</div>
+
+				<!-- validation_command -->
+				<div>
+					<label for="validation_command" class="block text-sm font-medium text-gray-700 mb-2">
+						検証コマンド (validation_command)
+					</label>
+					<input
+						type="text"
+						id="validation_command"
+						bind:value={formValidationCommand}
+						placeholder="検証用のコマンド"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				</div>
+
+				<!-- timeout -->
+				<div>
+					<label for="timeout" class="block text-sm font-medium text-gray-700 mb-2">
+						タイムアウト (秒)
+					</label>
+					<input
+						type="number"
+						id="timeout"
+						bind:value={formTimeout}
+						min="0"
+						placeholder="秒数"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+					/>
+				</div>
+
+				<!-- auto_stash -->
+				<div class="flex items-center gap-2">
+					<input type="checkbox" id="auto_stash" bind:checked={formAutoStash} class="w-4 h-4" />
+					<label for="auto_stash" class="text-sm font-medium text-gray-700">
+						自動スタッシュ (auto_stash)
+					</label>
+				</div>
+
+				<!-- keep_branch -->
+				<div class="flex items-center gap-2">
+					<input type="checkbox" id="keep_branch" bind:checked={formKeepBranch} class="w-4 h-4" />
+					<label for="keep_branch" class="text-sm font-medium text-gray-700">
+						ブランチを保持 (keep_branch)
+					</label>
 				</div>
 
 				<!-- Agent -->
