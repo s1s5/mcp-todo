@@ -133,6 +133,6 @@ test.describe('Todo Delete Page', () => {
 		await expect(cancelButton).toBeVisible();
 
 		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		await expect(page).toMatchSnapshot('todo-delete-1.html');
 	});
 });
