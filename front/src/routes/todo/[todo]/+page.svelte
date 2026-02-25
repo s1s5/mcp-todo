@@ -12,6 +12,9 @@
 		ref_files: string[];
 		edit_files: string[];
 		prompt: string;
+		title: string | null;
+		auto_stash: boolean;
+		keep_branch: boolean;
 		context: string;
 		status: string;
 		output: string | null;
@@ -193,7 +196,12 @@
 		<div class="bg-white shadow rounded-lg overflow-hidden">
 			<div class="px-6 py-4 border-b border-gray-200">
 				<div class="flex items-center justify-between">
-					<span class="text-lg font-semibold text-gray-900">ID: {todo.id}</span>
+					<div class="flex items-center gap-2">
+						<span class="text-lg font-semibold text-gray-900">ID: {todo.id}</span>
+						{#if todo.title}
+							<span class="text-lg font-semibold text-gray-700">{todo.title}</span>
+						{/if}
+					</div>
 					<div class="flex items-center gap-2">
 						{#if todo.status === 'waiting' || todo.status === 'error'}
 							<button
@@ -235,7 +243,15 @@
 					</div>
 					<div>
 						<label class="block text-sm font-medium text-gray-500 mb-1">Timeout</label>
-						<p class="text-gray-900">{todo.timeout} 秒</p>
+						<p class="text-gray-900">{todo.timeout}秒</p>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-gray-500 mb-1">自動スタッシュ</label>
+						<p class="text-gray-900">{todo.auto_stash ? 'はい' : 'いいえ'}</p>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-gray-500 mb-1">ブランチ保持</label>
+						<p class="text-gray-900">{todo.keep_branch ? 'はい' : 'いいえ'}</p>
 					</div>
 				</div>
 
@@ -250,12 +266,26 @@
 					</div>
 				</div>
 
+				{#if todo.validation_command}
+					<div>
+						<label class="block text-sm font-medium text-gray-500 mb-1">完了判断コマンド</label>
+						<div class="p-3 bg-gray-50 rounded text-gray-900 font-mono text-sm whitespace-pre-wrap">{todo.validation_command}</div>
+					</div>
+				{/if}
+
 				{#if todo.context}
 					<div>
 						<label class="block text-sm font-medium text-gray-500 mb-1">Context</label>
 						<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm">
 							{todo.context}
 						</div>
+					</div>
+				{/if}
+
+				{#if todo.system_prompt}
+					<div>
+						<label class="block text-sm font-medium text-gray-500 mb-1">システムプロンプト</label>
+						<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm">{todo.system_prompt}</div>
 					</div>
 				{/if}
 
