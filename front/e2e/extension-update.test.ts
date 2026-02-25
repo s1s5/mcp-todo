@@ -115,7 +115,8 @@ test.describe('Extension Update Page', () => {
 		await expect(page.locator('#cmd')).toBeVisible();
 		await expect(page.locator('button[type="submit"]')).toBeVisible();
 
-		// スナップショットを取得
-		await expect(page).toHaveScreenshot();
+		// HTMLスナップショットを取得
+		const html = await page.content();
+		expect(html).toMatchSnapshot('extension-update.html');
 	});
 });
