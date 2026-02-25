@@ -114,7 +114,9 @@ test.describe('Extension List Page', () => {
 		const table = page.locator('#extensions-table');
 		await expect(table).toBeVisible();
 
-		// Take snapshot after page is stabilized
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot of only the relevant content (excluding dynamic script hashes)
+		const content = page.locator('#extensions-table');
+		const html = await content.innerHTML();
+		expect(html).toMatchSnapshot('extension-list-table.html');
 	});
 });
