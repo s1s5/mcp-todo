@@ -221,11 +221,11 @@
 	});
 </script>
 
-<div class="p-6 max-w-6xl mx-auto">
-	<a href="/" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">← 戻る</a>
+<div class="p-6 max-w-6xl mx-auto" id="todo-page">
+	<a href="/" class="text-blue-600 hover:text-blue-800 mb-4 inline-block" id="back-link">← 戻る</a>
 	
 	<div class="flex justify-between items-center mb-6">
-		<h1 class="text-2xl font-bold">Todos</h1>
+		<h1 class="text-2xl font-bold" id="todo-title">Todos</h1>
 		<div class="flex gap-4 items-center">
 			<select
 				bind:value={filterStatus}
@@ -251,11 +251,11 @@
 	{/if}
 
 	{#if loading}
-		<p class="text-gray-500">Loading...</p>
+		<p class="text-gray-500" id="loading">Loading...</p>
 	{:else if todos.length === 0}
-		<p class="text-gray-500">No Todos found.</p>
+		<p class="text-gray-500" id="no-todos">No Todos found.</p>
 	{:else}
-		<div class="bg-white shadow rounded-lg overflow-hidden">
+		<div class="bg-white shadow rounded-lg overflow-hidden" id="todo-table">
 			<div class="overflow-x-auto">
 				<table class="min-w-full divide-y divide-gray-200">
 					<thead class="bg-gray-50">
