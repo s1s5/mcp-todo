@@ -20,6 +20,9 @@ class TodoSerializer(serializers.ModelSerializer):
     agent_name = serializers.CharField(source='agent.name', read_only=True, allow_null=True)
     workdir = serializers.CharField(source='todo_list.workdir', read_only=True)
     todo_list_name = serializers.CharField(source='todo_list.name', read_only=True)  # 追加
+    system_prompt = serializers.CharField(source='agent.system_prompt', read_only=True, allow_null=True)
+    auto_stash = serializers.BooleanField()
+    keep_branch = serializers.BooleanField()
     
     class Meta:
         model = Todo
@@ -42,8 +45,11 @@ class TodoSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'branch_name',
+            'system_prompt',
+            'auto_stash',
+            'keep_branch',
         ]
-        read_only_fields = ['created_at', 'updated_at', 'status', 'output', 'workdir']
+        read_only_fields = ['created_at', 'updated_at', 'status', 'output', 'workdir', 'system_prompt']
     
     def create(self, validated_data):
         # workdirが指定されている場合は、TodoListを自動作成/取得
