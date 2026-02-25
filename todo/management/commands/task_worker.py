@@ -92,8 +92,9 @@ class Command(BaseCommand):
             running_workdir_list = list(self.running_workdirs.keys())
             if running_workdir_list:
                 todos = Todo.objects.filter(
-                    status=Todo.Status.QUEUED,
-                    todo_list__workdir__notin=running_workdir_list
+                    status=Todo.Status.QUEUED
+                ).exclude(
+                    todo_list__workdir__in=running_workdir_list
                 ).order_by("-priority", "created_at")
             else:
                 todos = Todo.objects.filter(
@@ -101,7 +102,9 @@ class Command(BaseCommand):
                 ).order_by("-priority", "created_at")
             next_todo = todos.first()
         except Exception as e:
+            import traceback
             self.stdout.write(self.style.ERROR(f"Todo取得エラー: {e}"))
+            self.stdout.write(traceback.format_exc())
             time.sleep(interval)
             return
 
