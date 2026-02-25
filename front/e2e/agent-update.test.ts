@@ -4,7 +4,7 @@ test.describe('Agent Update Page', () => {
 	const agentId = '1';
 
 	test.beforeEach(async ({ page }) => {
-		// Mock initial agent data fetch
+		// Mock initial agent data fetch with delay to make loading visible
 		await page.route(`/api/agents/${agentId}/`, async (route) => {
 			if (route.request().method() === 'GET') {
 				await route.fulfill({
@@ -17,7 +17,8 @@ test.describe('Agent Update Page', () => {
 						command: 'goose run --recipe',
 						created_at: '2024-01-01T00:00:00Z',
 						updated_at: '2024-01-01T00:00:00Z'
-					})
+					}),
+					delay: 500  // Add delay to make loading state visible
 				});
 			}
 		});
@@ -47,9 +48,23 @@ test.describe('Agent Update Page', () => {
 	});
 
 	test('3. 送信テスト: 値を変更してSubmitすると、詳細ページへリダイレクトされること', async ({ page }) => {
-		// Mock PUT request for update
+		// Mock both GET (with delay) and PUT requests
 		await page.route(`/api/agents/${agentId}/`, async (route) => {
-			if (route.request().method() === 'PUT') {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						id: 1,
+						name: 'Test Agent',
+						system_message: 'You are a helpful assistant.',
+						command: 'goose run --recipe',
+						created_at: '2024-01-01T00:00:00Z',
+						updated_at: '2024-01-01T00:00:00Z'
+					}),
+					delay: 100  // Small delay for loading state
+				});
+			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({
 					status: 200,
 					contentType: 'application/json',
@@ -95,9 +110,23 @@ test.describe('Agent Update Page', () => {
 	});
 
 	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
-		// Mock error response for PUT request
+		// Mock both GET (with delay) and PUT error requests
 		await page.route(`/api/agents/${agentId}/`, async (route) => {
-			if (route.request().method() === 'PUT') {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						id: 1,
+						name: 'Test Agent',
+						system_message: 'You are a helpful assistant.',
+						command: 'goose run --recipe',
+						created_at: '2024-01-01T00:00:00Z',
+						updated_at: '2024-01-01T00:00:00Z'
+					}),
+					delay: 100  // Small delay for loading state
+				});
+			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({
 					status: 500,
 					contentType: 'application/json',
