@@ -29,6 +29,7 @@ import yaml
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
+from todo.emoji import select_emoji
 from todo.models import Agent, Todo, TodoList
 
 
@@ -395,8 +396,19 @@ class Command(BaseCommand):
         # 変更を追加
         subprocess.run(["git", "add", "-A"], cwd=worktree_path, check=True)
 
+        emoji = ":robot:"
+        try:
+            emoji = select_emoji(
+                "\n".join(["# {}".format(todo.title), "# 修正内容", todo.prompt, "# 結果", stdout_output])
+            )
+        except Exception:
+            pass
+        message = todo.title or "AI Generated Update"
+        if len(message) > 50:
+            message = message[:47] + "..."
+
         # コミットメッセージ作成
-        commit_msg = ":robot: AI Generated Update\n\n"
+        commit_msg = f"{emoji} {message}\n\n"
         commit_msg += "Todo ID: {}\n".format(todo.id)
         commit_msg += "Output: {}\n".format(stdout_output[-200:])
         # commit_msg += "Prompt: {}".format(todo.prompt[:100])
