@@ -54,7 +54,7 @@ class TodoSerializer(serializers.ModelSerializer):
             "context",
             "validation_command",
         ]
-        read_only_fields = ["created_at", "updated_at", "status", "output", "workdir", "system_prompt"]
+        read_only_fields = ["created_at", "updated_at", "output", "workdir", "system_prompt"]
 
     def create(self, validated_data):
         # workdirが指定されている場合は、TodoListを自動作成/取得
