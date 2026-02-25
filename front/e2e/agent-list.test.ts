@@ -4,7 +4,7 @@ test.describe('Agent List Page', () => {
 	test('should display loading then empty message', async ({ page }) => {
 		// Mock empty response
 		await page.route('/api/agents/', async (route) => {
-			await route.fulfill({ json: [] });
+			await route.fulfill({ json: [], delay: 100 });
 		});
 
 		// Navigate to the page
@@ -38,7 +38,8 @@ test.describe('Agent List Page', () => {
 						created_at: '2024-01-01T00:00:00Z',
 						updated_at: '2024-01-01T00:00:00Z'
 					}
-				]
+				],
+				delay: 100
 			});
 		});
 
