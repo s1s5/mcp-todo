@@ -101,7 +101,7 @@ def validate_path(workdir: str, file_path: str, must_exists: bool) -> str:
 
     # workdir外に出れていないか確認
     real_workdir = os.path.realpath(workdir)
-    real_resolved = os.path.realpath(os.path.dirname(resolved))
+    real_resolved = os.path.realpath(resolved)
 
     # ファイル自体をチェック
     if not real_resolved.startswith(real_workdir):
