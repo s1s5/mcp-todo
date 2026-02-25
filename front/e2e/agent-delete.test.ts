@@ -80,7 +80,7 @@ test.describe('Agent Delete Page', () => {
 		await page.locator('button:has-text("Delete")').click();
 
 		// Should redirect to list page
-		await expect(page).toHaveURL('/agent/');
+		await expect(page).toHaveURL('/agent');
 	});
 
 	test('4. キャンセルボタン: クリックで詳細ページへ戻ること', async ({ page }) => {
@@ -101,7 +101,7 @@ test.describe('Agent Delete Page', () => {
 		await page.locator('a:has-text("Cancel")').click();
 
 		// Should navigate to detail page
-		await expect(page).toHaveURL(`/agent/${agentId}/`);
+		await expect(page).toHaveURL(`/agent/${agentId}`);
 	});
 
 	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
