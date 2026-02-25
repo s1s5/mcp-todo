@@ -24,6 +24,10 @@ class TodoSerializer(serializers.ModelSerializer):
     auto_stash = serializers.BooleanField(required=False, default=True)
     keep_branch = serializers.BooleanField(required=False, default=False)
     
+    # 明示的なフィールド定義（allow_blank対応）
+    context = serializers.CharField(required=False, allow_blank=True, allow_null=True, default='')
+    validation_command = serializers.CharField(required=False, allow_blank=True, allow_null=True, default='')
+    
     class Meta:
         model = Todo
         fields = [
@@ -37,10 +41,8 @@ class TodoSerializer(serializers.ModelSerializer):
             'ref_files',
             'edit_files',
             'prompt',
-            'context',
             'status',
             'output',
-            'validation_command',
             'timeout',
             'created_at',
             'updated_at',
