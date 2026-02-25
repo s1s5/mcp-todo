@@ -26,8 +26,9 @@ test.describe('Agent Create Page', () => {
 	});
 
 	test('should redirect to list after successful creation', async ({ page }) => {
-		// Mock successful API response
+		// Mock successful API response with delay to verify loading state
 		await page.route('/api/agents/', async (route) => {
+			await new Promise((resolve) => setTimeout(resolve, 500));
 			await route.fulfill({
 				status: 201,
 				json: {
@@ -52,6 +53,9 @@ test.describe('Agent Create Page', () => {
 		// Click Create button
 		const createButton = page.locator('button[type="submit"]');
 		await createButton.click();
+
+		// Verify loading state is displayed
+		await expect(createButton).toHaveText('Creating...');
 
 		// Verify redirect to list page
 		await expect(page).toHaveURL('/agent/');
