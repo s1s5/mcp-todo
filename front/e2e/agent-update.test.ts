@@ -135,7 +135,7 @@ test.describe('Agent Update Page', () => {
 		// Wait for loading to complete (name should have value after load)
 		await expect(nameInput).toHaveValue('Test Agent', { timeout: 10000 });
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot
+		await expect(await page.content()).toMatchSnapshot('agent-update.html');
 	});
 });
