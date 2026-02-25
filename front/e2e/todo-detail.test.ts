@@ -45,7 +45,7 @@ test.describe('Todo Detail Page', () => {
 		await expect(page.locator('text=waiting')).toBeVisible();
 
 		// スナップショットテスト
-		await expect(page).toHaveScreenshot();
+		await expect(await page.content()).toMatchSnapshot('todo-detail.html');
 	});
 
 	test('should navigate to update page', async ({ page }) => {
