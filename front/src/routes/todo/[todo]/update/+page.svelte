@@ -25,8 +25,8 @@
 		title: string | null;
 		ref_files: string[] | null;
 		edit_files: string[] | null;
-		context: string | null;
-		validation_command: string | null;
+		context: string ;
+		validation_command: string;
 		timeout: number | null;
 		auto_stash: boolean;
 		keep_branch: boolean;
@@ -153,8 +153,8 @@
 			payload.title = formTitle || null;
 			payload.ref_files = formRefFiles.split('\n').filter(line => line.trim());
 			payload.edit_files = formEditFiles.split('\n').filter(line => line.trim());
-			payload.context = formContext || null;
-			payload.validation_command = formValidationCommand || null;
+			payload.context = formContext;
+			payload.validation_command = formValidationCommand;
 			payload.auto_stash = formAutoStash;
 			payload.keep_branch = formKeepBranch;
 
