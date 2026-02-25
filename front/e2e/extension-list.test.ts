@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.describe('Extension List Page', () => {
 	test('should display loading then table or empty message', async ({ page }) => {
-		// Mock response with data
+		// Mock response with data - add delay to ensure loading indicator is visible
 		await page.route('/api/extensions/', async (route) => {
 			await route.fulfill({
 				json: [
@@ -17,7 +17,8 @@ test.describe('Extension List Page', () => {
 						created_at: '2024-01-01T00:00:00Z',
 						updated_at: '2024-01-01T00:00:00Z'
 					}
-				]
+				],
+				delay: 100
 			});
 		});
 
@@ -43,9 +44,9 @@ test.describe('Extension List Page', () => {
 	});
 
 	test('should display loading then empty message when no extensions', async ({ page }) => {
-		// Mock empty response
+		// Mock empty response - add delay to ensure loading indicator is visible
 		await page.route('/api/extensions/', async (route) => {
-			await route.fulfill({ json: [] });
+			await route.fulfill({ json: [], delay: 100 });
 		});
 
 		// Navigate to the page
