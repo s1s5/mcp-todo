@@ -134,18 +134,18 @@ def get_git_worktrees(workdir):
 
 def get_git_branches(workdir):
     """
-    指定されたworkdirで git branch -a を実行し、ブランチ名一覧を取得する
+    指定されたworkdirで git branch を実行し、ローカルブランチ名一覧を取得する
     
     Args:
         workdir: gitリポジトリのルートディレクトリ
         
     Returns:
-        list: ブランチ名のリスト（'* 'は除去）
+        list: ローカルブランチ名のリスト（'* 'は除去）
               エラー発生時は空リストを返す
     """
     try:
         result = subprocess.run(
-            ['git', 'branch', '-a'],
+            ['git', 'branch'],
             cwd=workdir,
             capture_output=True,
             text=True,
@@ -153,7 +153,7 @@ def get_git_branches(workdir):
         )
         
         if result.returncode != 0:
-            logger.error(f"git branch -a failed in {workdir}: {result.stderr}")
+            logger.error(f"git branch failed in {workdir}: {result.stderr}")
             return []
         
         branches = []
@@ -167,10 +167,10 @@ def get_git_branches(workdir):
         return branches
         
     except subprocess.TimeoutExpired:
-        logger.error(f"git branch -a timeout in {workdir}")
+        logger.error(f"git branch timeout in {workdir}")
         return []
     except Exception as e:
-        logger.error(f"git branch -a error in {workdir}: {e}")
+        logger.error(f"git branch error in {workdir}: {e}")
         return []
 
 
