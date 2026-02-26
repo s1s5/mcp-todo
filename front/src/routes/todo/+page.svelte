@@ -162,11 +162,9 @@
 			const newIds = fetchedIds.filter(id => !currentTodoIds.includes(id));
 			if (newIds.length > 0) {
 				newTodosDetected = true;
-				// タブが非表示の場合はタイトル通知を設定
-				if (document.hidden) {
-					hasNotification = true;
-					updateTitleNotification();
-				}
+				// 新しいtodoが検出された場合は常にタイトル通知を表示
+				hasNotification = true;
+				updateTitleNotification();
 			}
 
 			// Update existing todos by ID, preserve current order
