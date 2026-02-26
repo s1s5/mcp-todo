@@ -12,6 +12,40 @@ from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, Ex
 logger = logging.getLogger(__name__)
 
 
+def check_git_repository(workdir):
+    """
+    指定されたパスがgit repositoryかどうかをチェックする
+    
+    Args:
+        workdir: チェック対象のパス
+        
+    Returns:
+        bool: git repositoryの場合はTrue
+        
+    Raises:
+        ValueError: git repositoryでない場合
+    """
+    try:
+        result = subprocess.run(
+            ['git', '-C', workdir, 'rev-parse', '--is-inside-work-tree'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0 or result.stdout.strip() != 'true':
+            raise ValueError(f"指定されたパスはgit repositoryではありません: {workdir}")
+        
+        return True
+        
+    except subprocess.TimeoutExpired:
+        raise ValueError(f"git repositoryのチェックがタイムアウトしました: {workdir}")
+    except Exception as e:
+        if isinstance(e, ValueError):
+            raise
+        raise ValueError(f"指定されたパスはgit repositoryではありません: {workdir}")
+
+
 def get_git_worktrees(workdir):
     """
     指定されたworkdirで git worktree list を実行し、結果を取得する
@@ -22,7 +56,13 @@ def get_git_worktrees(workdir):
     Returns:
         list: [{"path": "...", "branch": "..."}, ...] のリスト
               エラー発生時は空リストを返す
+        
+    Raises:
+        ValueError: git repositoryでない場合
     """
+    # まずgit repositoryかどうかをチェック
+    check_git_repository(workdir)
+    
     try:
         result = subprocess.run(
             ['git', 'worktree', 'list', '--porcelain'],
@@ -134,8 +174,14 @@ class TodoListViewSet(viewsets.ModelViewSet):
     def worktrees(self, request, pk=None):
         """指定されたTodoListのworkdirでgit worktree listを実行し、結果を取得"""
         todolist = self.get_object()
-        worktrees = get_git_worktrees(todolist.workdir)
-        return Response({'worktrees': worktrees})
+        try:
+            worktrees = get_git_worktrees(todolist.workdir)
+            return Response({'workdir': todolist.workdir, 'worktrees': worktrees})
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=True, methods=['get'])
     def branches(self, request, pk=None):
@@ -253,8 +299,14 @@ class TodoViewSet(viewsets.ModelViewSet):
     def worktrees(self, request, pk=None):
         """指定されたTodoが所属するTodoListのworkdirでgit worktree listを実行し、結果を取得"""
         todo = self.get_object()
-        worktrees = get_git_worktrees(todo.todo_list.workdir)
-        return Response({'worktrees': worktrees})
+        try:
+            worktrees = get_git_worktrees(todo.todo_list.workdir)
+            return Response({'workdir': todo.todo_list.workdir, 'worktrees': worktrees})
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=True, methods=['get'])
     def branches(self, request, pk=None):
