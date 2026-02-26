@@ -142,7 +142,7 @@
 		}
 	}
 
-	// Silent fetch for polling - updates existing todos without adding new ones
+	// Silent fetch for polling - updates existing todos and adds new ones if they fit on current page
 	async function fetchTodosSilent() {
 		if (loading) return; // Don't poll during initial load
 		try {
@@ -169,12 +169,24 @@
 			}
 
 			// Update existing todos by ID, preserve current order
-			const updatedTodos = todos.map(todo => {
+			const existingTodos = todos.map(todo => {
 				const fetched = fetchedTodos.find(t => t.id === todo.id);
 				return fetched || todo;
 			});
-			todos = updatedTodos;
-			currentTodoIds = updatedTodos.map(t => t.id);
+
+			// Add new todos that fit on the current page (up to pageSize)
+			const existingIds = existingTodos.map(t => t.id);
+			const newTodosToAdd = fetchedTodos
+				.filter(t => !existingIds.includes(t.id))
+				.slice(0, pageSize - existingTodos.length);
+
+			// Merge existing and new todos, sorted by updated_at
+			const mergedTodos = [...existingTodos, ...newTodosToAdd].sort((a, b) =>
+				new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+			);
+
+			todos = mergedTodos;
+			currentTodoIds = mergedTodos.map(t => t.id);
 		} catch (e) {
 			// Silent fail - don't show error for background polling
 		}
