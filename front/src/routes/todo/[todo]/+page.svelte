@@ -332,21 +332,21 @@
 							<button
 								onclick={() => updatePriority(-10)}
 								disabled={updatingPriority}
-								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === -10 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority <= -5 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
 							>
 								Low
 							</button>
 							<button
 								onclick={() => updatePriority(0)}
 								disabled={updatingPriority}
-								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority > -5 && todo.priority <= 5 ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
 							>
 								Middle
 							</button>
 							<button
 								onclick={() => updatePriority(10)}
 								disabled={updatingPriority}
-								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 10 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority > 5 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
 							>
 								High
 							</button>
