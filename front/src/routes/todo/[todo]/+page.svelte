@@ -345,8 +345,9 @@
 		}
 	}
 
-	onMount(() => {
-		fetchTodo();
+	onMount(async () => {
+		await fetchTodo();
+		await fetchWorktrees();
 		// statusがrunningのときは5秒ごとにポーリング
 		pollInterval = setInterval(() => {
 			if (todo?.status === 'running' || todo?.status === 'queued') {
@@ -358,13 +359,6 @@
 	onDestroy(() => {
 		if (pollInterval) {
 			clearInterval(pollInterval);
-		}
-	});
-
-	// worktree一覧取得はtodo取得後に実行
-	$effect(() => {
-		if (todo && !loading && worktrees.length === 0 && !loadingWorktrees) {
-			fetchWorktrees();
 		}
 	});
 </script>
