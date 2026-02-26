@@ -44,6 +44,13 @@
 	let branchError = $state('');
 	let showBranchSelect = $state(false);
 
+	// worktree選択用 state
+	let worktrees: { path: string; branch: string }[] = $state([]);
+	let loadingWorktrees = $state(false);
+	let worktreeError = $state('');
+	let selectedWorktreePath = $state('');
+	let changeBranch = $state(false);
+
 	// CSRFトークンを取得する関数
 	function getCSRFToken(): string {
 		const name = 'csrftoken';
@@ -208,6 +215,79 @@
 		showBranchSelect = !showBranchSelect;
 	}
 
+	async function fetchWorktrees() {
+		if (!todo) return;
+		loadingWorktrees = true;
+		worktreeError = '';
+		try {
+			const res = await fetch(`/api/todos/${todo.id}/worktrees/`);
+			if (!res.ok) throw new Error('Failed to fetch worktrees');
+			const data: { path: string; branch: string }[] = await res.json();
+			worktrees = data;
+			// 現在のtodoのworkdirに該当するworktreeを初期選択
+			const currentWorkdir = todo.todo_list_name;
+			if (currentWorkdir) {
+				const matching = worktrees.find(w => w.path === currentWorkdir);
+				if (matching) {
+					selectedWorktreePath = matching.path;
+				} else if (worktrees.length > 0) {
+					selectedWorktreePath = worktrees[0].path;
+				}
+			} else if (worktrees.length > 0) {
+				selectedWorktreePath = worktrees[0].path;
+			}
+		} catch (e) {
+			worktreeError = e instanceof Error ? e.message : 'Failed to load worktrees';
+			worktrees = [];
+		} finally {
+			loadingWorktrees = false;
+		}
+	}
+
+	async function updateWorktree() {
+		if (!todo || !selectedWorktreePath) return;
+		const selectedWorktree = worktrees.find(w => w.path === selectedWorktreePath);
+		if (!selectedWorktree) return;
+
+		loadingWorktrees = true;
+		worktreeError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			// TodoListのworkdirを選択したworktreeのpathに更新
+			const todoListRes = await fetch(`/api/todo-lists/`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin',
+				body: JSON.stringify({ workdir: selectedWorktreePath })
+			});
+			if (!todoListRes.ok) throw new Error('Failed to update workdir');
+
+			// ブランチ変更チェックボックスがオンの場合、branch_nameも更新
+			if (changeBranch) {
+				const branchRes = await fetch(`/api/todos/${todo.id}/`, {
+					method: 'PATCH',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-CSRFToken': csrfToken
+					},
+					credentials: 'same-origin',
+					body: JSON.stringify({ branch_name: selectedWorktree.branch })
+				});
+				if (!branchRes.ok) throw new Error('Failed to update branch');
+			}
+
+			// 更新成功后、画面を再読み込み
+			await fetchTodo();
+		} catch (e) {
+			worktreeError = e instanceof Error ? e.message : 'Failed to update worktree';
+		} finally {
+			loadingWorktrees = false;
+		}
+	}
+
 	function getStatusColor(status: string): string {
 		switch (status) {
 			case 'waiting': return 'bg-cyan-100 text-cyan-800';
@@ -278,6 +358,13 @@
 	onDestroy(() => {
 		if (pollInterval) {
 			clearInterval(pollInterval);
+		}
+	});
+
+	// worktree一覧取得はtodo取得後に実行
+	$effect(() => {
+		if (todo && !loading && worktrees.length === 0 && !loadingWorktrees) {
+			fetchWorktrees();
 		}
 	});
 </script>
@@ -361,6 +448,45 @@
 						<span class="block text-sm font-medium text-gray-500 mb-1">TodoList</span>
 						<p id="todo-list" class="text-gray-900">{todo.todo_list_name || `ID: ${todo.todo_list}`}</p>
 					</div>
+					{#if todo.status === 'waiting' || todo.status === 'queued'}
+						<div>
+							<span class="block text-sm font-medium text-gray-500 mb-1">Worktree</span>
+							{#if worktreeError}
+								<p class="text-red-500 text-sm">{worktreeError}</p>
+							{:else if loadingWorktrees && worktrees.length === 0}
+								<p class="text-gray-500 text-sm">Loading...</p>
+							{:else if worktrees.length > 0}
+								<div class="flex items-center gap-2">
+									<select
+										bind:value={selectedWorktreePath}
+										disabled={loadingWorktrees}
+										class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
+									>
+										{#each worktrees as wt}
+											<option value={wt.path}>{wt.path} ({wt.branch})</option>
+										{/each}
+									</select>
+									<label class="flex items-center gap-1 text-sm text-gray-600">
+										<input
+											type="checkbox"
+											bind:checked={changeBranch}
+											class="rounded border-gray-300"
+										/>
+										ブランチも変更する
+									</label>
+									<button
+										onclick={updateWorktree}
+										disabled={loadingWorktrees || !selectedWorktreePath}
+										class="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50"
+									>
+										{loadingWorktrees ? '更新中...' : '適用'}
+									</button>
+								</div>
+							{:else}
+								<p class="text-gray-500 text-sm">利用可能なworktreeがありません</p>
+							{/if}
+						</div>
+					{/if}
 					<div>
 						<span class="block text-sm font-medium text-gray-500 mb-1">Agent</span>
 						<p id="agent" class="text-gray-900">{todo.agent_name || (todo.agent ? `ID: ${todo.agent}` : '-')}</p>
