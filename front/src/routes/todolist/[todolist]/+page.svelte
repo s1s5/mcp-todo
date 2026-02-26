@@ -27,6 +27,21 @@
 	let loading = $state(true);
 	let error = $state('');
 
+	// worktree一覧取得用
+	let worktrees: { path: string; branch: string }[] = $state([]);
+	let loadingWorktrees = $state(false);
+	let worktreeError = $state('');
+
+	// 追加フォーム用
+	let newWorktreeName = $state('');
+	let newWorktreeBranch = $state('');
+	let creatingWorktree = $state(false);
+	let showAddForm = $state(false);
+
+	// ブランチ選択用
+	let branches: string[] = $state([]);
+	let loadingBranches = $state(false);
+
 	// URLパラメータからtodolist IDを取得
 	const todolistId = $derived($page.params.todolist);
 
@@ -65,7 +80,109 @@
 
 	onMount(() => {
 		fetchTodoListDetail();
+		fetchWorktrees();
+		fetchBranches();
 	});
+
+	// CSRFトークンを取得する関数
+	function getCSRFToken(): string {
+		const name = 'csrftoken';
+		let cookieValue = '';
+		if (document.cookie && document.cookie !== '') {
+			const cookies = document.cookie.split(';');
+			for (let i = 0; i < cookies.length; i++) {
+				const cookie = cookies[i].trim();
+				if (cookie.substring(0, name.length + 1) === (name + '=')) {
+					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+					break;
+				}
+			}
+		}
+		return cookieValue;
+	}
+
+	// ブランチ一覧を取得
+	async function fetchBranches() {
+		loadingBranches = true;
+		try {
+			const res = await fetch(`/api/todolists/${todolistId}/branches/`);
+			if (!res.ok) throw new Error('Failed to fetch branches');
+			branches = await res.json();
+		} catch (e) {
+			console.error('Failed to fetch branches:', e);
+			branches = [];
+		} finally {
+			loadingBranches = false;
+		}
+	}
+
+	// worktree一覧を取得
+	async function fetchWorktrees() {
+		loadingWorktrees = true;
+		worktreeError = '';
+		try {
+			const res = await fetch(`/api/todolists/${todolistId}/worktrees/`);
+			if (!res.ok) throw new Error('Failed to fetch worktrees');
+			worktrees = await res.json();
+		} catch (e) {
+			worktreeError = e instanceof Error ? e.message : 'Failed to load worktrees';
+			worktrees = [];
+		} finally {
+			loadingWorktrees = false;
+		}
+	}
+
+	// worktreeを作成
+	async function createWorktree() {
+		if (!newWorktreeName.trim() || !newWorktreeBranch.trim()) return;
+		creatingWorktree = true;
+		worktreeError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todolists/${todolistId}/worktrees/`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
+				},
+				body: JSON.stringify({
+					name: newWorktreeName.trim(),
+					branch: newWorktreeBranch.trim()
+				})
+			});
+			if (!res.ok) throw new Error('Failed to create worktree');
+			// 成功后、worktreesを再取得
+			await fetchWorktrees();
+			// フォームをリセット
+			newWorktreeName = '';
+			newWorktreeBranch = '';
+			showAddForm = false;
+		} catch (e) {
+			worktreeError = e instanceof Error ? e.message : 'Failed to create worktree';
+		} finally {
+			creatingWorktree = false;
+		}
+	}
+
+	// worktreeを削除
+	async function deleteWorktree(name: string) {
+		if (!name) return;
+		worktreeError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todolists/${todolistId}/worktrees/${name}/`, {
+				method: 'DELETE',
+				headers: {
+					'X-CSRFToken': csrfToken
+				}
+			});
+			if (!res.ok) throw new Error('Failed to delete worktree');
+			// 成功后、worktreesを再取得
+			await fetchWorktrees();
+		} catch (e) {
+			worktreeError = e instanceof Error ? e.message : 'Failed to delete worktree';
+		}
+	}
 </script>
 
 <div class="p-6 max-w-4xl mx-auto">
@@ -131,6 +248,77 @@
 					<div class="sm:col-span-2">
 						<dt class="text-sm font-medium text-gray-500">Workdir</dt>
 						<dd class="mt-1 text-sm text-gray-900 font-mono">{todolist.workdir}</dd>
+					</div>
+					<div class="sm:col-span-2">
+						<dt class="text-sm font-medium text-gray-500">Worktrees</dt>
+						<dd class="mt-1 text-sm text-gray-900">
+							{#if worktreeError}
+								<p class="text-red-500">{worktreeError}</p>
+							{:else if loadingWorktrees && worktrees.length === 0}
+								<p class="text-gray-500">Loading...</p>
+							{:else if worktrees.length > 0}
+								<ul class="space-y-1 mb-2">
+									{#each worktrees as wt}
+										<li class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
+											<span class="font-mono">{wt.path} ({wt.branch})</span>
+											<button
+												onclick={() => deleteWorktree(wt.path.split('/').pop() || '')}
+												class="text-red-600 hover:text-red-800 text-xs"
+											>
+												削除
+											</button>
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="text-gray-500 mb-2">worktreeがありません</p>
+							{/if}
+							
+							{#if showAddForm}
+								<div class="flex gap-2 items-center mt-2">
+									<input
+										type="text"
+										bind:value={newWorktreeName}
+										placeholder="ディレクトリ名"
+										disabled={creatingWorktree}
+										class="px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+									/>
+									<input
+										type="text"
+										bind:value={newWorktreeBranch}
+										placeholder="ブランチ名"
+										disabled={creatingWorktree}
+										list="branch-list"
+										class="px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+									/>
+									<datalist id="branch-list">
+										{#each branches as branch}
+											<option value={branch}>{branch}</option>
+										{/each}
+									</datalist>
+									<button
+										onclick={createWorktree}
+										disabled={creatingWorktree || !newWorktreeName.trim() || !newWorktreeBranch.trim()}
+										class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+									>
+										{creatingWorktree ? '作成中...' : '作成'}
+									</button>
+									<button
+										onclick={() => showAddForm = false}
+										class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+									>
+										キャンセル
+									</button>
+								</div>
+							{:else}
+								<button
+									onclick={() => showAddForm = true}
+									class="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+								>
+									+ 追加
+								</button>
+							{/if}
+						</dd>
 					</div>
 					<div>
 						<dt class="text-sm font-medium text-gray-500">Created</dt>
