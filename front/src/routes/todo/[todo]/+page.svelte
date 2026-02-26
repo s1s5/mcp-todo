@@ -194,6 +194,19 @@
 		return formatDuration(todo.started_at, todo.finished_at);
 	}
 
+	function getPriorityColor(priority: number): string {
+		if (priority <= -5) {
+			// 低緊急性 - 薄い青色
+			return 'bg-blue-100 text-blue-800';
+		} else if (priority > 5) {
+			// 高緊急性 - 赤色
+			return 'bg-red-100 text-red-800';
+		} else {
+			// 通常 - 灰色
+			return 'bg-gray-100 text-gray-800';
+		}
+	}
+
 	onMount(() => {
 		fetchTodo();
 		// statusがrunningのときは5秒ごとにポーリング
@@ -313,6 +326,9 @@
 					<div class="md:col-span-2">
 						<label class="block text-sm font-medium text-gray-500 mb-1">優先度</label>
 						<div class="flex items-center gap-2">
+							<span class="px-3 py-1 text-sm font-medium rounded-full {getPriorityColor(todo.priority)}">
+								{todo.priority}
+							</span>
 							<button
 								onclick={() => updatePriority(-10)}
 								disabled={updatingPriority}
