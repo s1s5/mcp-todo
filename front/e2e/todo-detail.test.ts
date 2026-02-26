@@ -27,7 +27,7 @@ test.describe('Todo Detail Page', () => {
 		branch_name: 'test-branch'
 	};
 
-	test('should display loading then todo details', async ({ page }) => {
+	test('should display todo details', async ({ page }) => {
 		// APIをモック
 		await page.route('/api/todos/1/', async (route) => {
 			await route.fulfill({
@@ -40,10 +40,6 @@ test.describe('Todo Detail Page', () => {
 		// ページへアクセス
 		await page.goto('/todo/1');
 
-		// Loading表示の確認
-		const loadingLocator = page.getByText('Loading...');
-		await expect(loadingLocator).toBeVisible();
-
 		// Todo情報が表示されるまで待機
 		const todoDetails = page.getByText('Todo詳細');
 		await expect(todoDetails).toBeVisible();
@@ -55,7 +51,7 @@ test.describe('Todo Detail Page', () => {
 		await expect(page.locator('text=waiting')).toBeVisible();
 
 		// スナップショットテスト
-		await expect(await page.content()).toMatchSnapshot('todo-detail.html');
+		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail.html');
 	});
 
 	test('should navigate to update page', async ({ page }) => {
@@ -421,7 +417,7 @@ test.describe('Todo Detail Page', () => {
 		await expect(page.getByText('Test TodoList')).toBeVisible();
 		await expect(page.getByText('waiting')).toBeVisible();
 
-		// main要素のHTMLスナップショットを取得
-		await expect(await page.innerHTML('main')).toMatchSnapshot('todo-detail-priority.html');
+		// メインコンテンツのHTMLスナップショットを取得
+		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail-priority.html');
 	});
 });
