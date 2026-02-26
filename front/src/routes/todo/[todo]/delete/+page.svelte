@@ -115,6 +115,7 @@
 	<div class="flex items-center gap-4 mb-6">
 		<a
 			href="/todo/{$page.params.todo}"
+			aria-label="詳細ページに戻る"
 			class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
 		>
 			← キャンセル
@@ -211,6 +212,7 @@
 			<div class="flex justify-center gap-4">
 				<a
 					href="/todo/{$page.params.todo}"
+					aria-label="詳細ページに戻る"
 					id="cancel-button"
 					class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
 				>
@@ -219,6 +221,7 @@
 				<button
 					onclick={deleteTodo}
 					disabled={deleting}
+					aria-label="Todoを削除"
 					id="delete-button"
 					class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition disabled:opacity-50"
 				>
