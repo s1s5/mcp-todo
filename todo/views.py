@@ -159,8 +159,12 @@ def get_git_branches(workdir):
         branches = []
         for line in result.stdout.splitlines():
             branch = line.strip()
-            # 先頭の '* ' を除去
+            # 先頭の '* ' または '+ ' を除去
+            # '* ' = 現在のチェックアウトブランチ
+            # '+ ' = 別のワークツリーでチェックアウトされているブランチ
             if branch.startswith('* '):
+                branch = branch[2:]
+            elif branch.startswith('+ '):
                 branch = branch[2:]
             branches.append(branch)
         
