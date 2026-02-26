@@ -270,7 +270,7 @@
 					<div class="flex items-center gap-2">
 						{#if todo.status === 'waiting' || todo.status === 'error'}
 							<button
-								onclick={() => startTodo(todo.id)}
+								onclick={() => todo && startTodo(todo.id)}
 								disabled={processingId === todo.id}
 								class="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition disabled:opacity-50 cursor-pointer"
 							>
@@ -279,7 +279,7 @@
 						{/if}
 						{#if todo.status === 'waiting' || todo.status === 'queued' || todo.status === 'running'}
 							<button
-								onclick={() => cancelTodo(todo.id)}
+								onclick={() => todo && cancelTodo(todo.id)}
 								disabled={processingId === todo.id}
 								class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition disabled:opacity-50 cursor-pointer"
 							>
