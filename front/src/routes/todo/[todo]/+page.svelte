@@ -43,6 +43,7 @@
 	let updatingBranch = $state(false);
 	let branchError = $state('');
 	let showBranchSelect = $state(false);
+	let branchInputValue = $state('');
 
 	// 新しいブランチ作成用 state
 	let newBranchName = $state('');
@@ -177,8 +178,8 @@
 		try {
 			const res = await fetch(`/api/todos/${todo.id}/branches/`);
 			if (!res.ok) throw new Error('Failed to fetch branches');
-			const data: string[] = await res.json();
-			branches = data;
+			const data: { branches: string[] } = await res.json();
+			branches = data.branches || [];
 		} catch (e) {
 			branchError = e instanceof Error ? e.message : 'Failed to load branches';
 			// エラー時はブランチ一覧を空にする（従来通り現在値のみ表示）
@@ -274,6 +275,10 @@
 	function toggleBranchSelect() {
 		if (!showBranchSelect && branches.length === 0 && !loadingBranches) {
 			fetchBranches();
+		}
+		// ブランチ選択UIを開くときは、現在のブランチ名で入力を初期化
+		if (!showBranchSelect && todo) {
+			branchInputValue = todo.branch_name || '';
 		}
 		showBranchSelect = !showBranchSelect;
 	}
@@ -582,7 +587,7 @@
 										<input
 											type="text"
 											list="branch-list"
-											value={todo.branch_name || ''}
+											bind:value={branchInputValue}
 											onchange={(e) => {
 												const value = (e.target as HTMLInputElement).value;
 												if (value) {
