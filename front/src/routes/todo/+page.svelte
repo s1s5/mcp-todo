@@ -43,7 +43,18 @@
 	let totalCount = $state(0);
 	let currentPage = $state(1);
 	let totalPages = $state(1);
-	const pageSize = 50;
+	let pageSize = $state(50);  // 初期値、画面サイズに基づいて動的に計算
+
+	// 画面サイズに基づいてpageSizeを計算する関数
+	function calculatePageSize(): number {
+		const headerHeight = 200;  // ヘッダー+Pagination部分
+		const rowHeight = 57;       // 1行の高さ（固定）
+		const availableHeight = window.innerHeight - headerHeight;
+		const calculated = Math.floor(availableHeight / rowHeight);
+		
+		// 最低10件、最高50件
+		return Math.max(10, Math.min(50, calculated));
+	}
 
 	// Waiting状態のタスク数を監視
 	let waitingTodosCount = $derived(todos.filter(t => t.status === 'waiting').length);
@@ -218,7 +229,7 @@
 	}
 
 	onMount(() => {
-		// URLからページ番号を初期化
+		pageSize = calculatePageSize();  // 画面サイズに基づいてpageSizeを計算
 		currentPage = getPageFromURL();
 		fetchTodos();
 		// Start polling every 5 seconds
