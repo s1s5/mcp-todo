@@ -21,6 +21,7 @@
 		error: string | null;
 		validation_command: string | null;
 		timeout: number;
+		priority: number;
 		created_at: string;
 		updated_at: string;
 		branch_name: string | null;
@@ -33,6 +34,7 @@
 	let error = $state('');
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
 	let processingId = $state<number | null>(null);
+	let updatingPriority = $state(false);
 
 	// CSRFトークンを取得する関数
 	function getCSRFToken(): string {
@@ -122,6 +124,29 @@
 			error = e instanceof Error ? e.message : 'Failed to cancel todo';
 		} finally {
 			processingId = null;
+		}
+	}
+
+	async function updatePriority(priority: number) {
+		if (!todo) return;
+		updatingPriority = true;
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${todo.id}/`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin',
+				body: JSON.stringify({ priority })
+			});
+			if (!res.ok) throw new Error('Failed to update priority');
+			await fetchTodo();
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Failed to update priority';
+		} finally {
+			updatingPriority = false;
 		}
 	}
 
@@ -284,6 +309,32 @@
 					<div>
 						<label class="block text-sm font-medium text-gray-500 mb-1">ブランチ保持</label>
 						<p class="text-gray-900">{todo.keep_branch ? 'はい' : 'いいえ'}</p>
+					</div>
+					<div class="md:col-span-2">
+						<label class="block text-sm font-medium text-gray-500 mb-1">優先度</label>
+						<div class="flex items-center gap-2">
+							<button
+								onclick={() => updatePriority(-10)}
+								disabled={updatingPriority}
+								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === -10 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+							>
+								Low
+							</button>
+							<button
+								onclick={() => updatePriority(0)}
+								disabled={updatingPriority}
+								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+							>
+								Middle
+							</button>
+							<button
+								onclick={() => updatePriority(10)}
+								disabled={updatingPriority}
+								class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 10 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+							>
+								High
+							</button>
+						</div>
 					</div>
 				</div>
 
