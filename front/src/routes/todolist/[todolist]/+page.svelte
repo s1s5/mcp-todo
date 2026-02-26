@@ -139,7 +139,7 @@
 		worktreeError = '';
 		try {
 			const csrfToken = getCSRFToken();
-			const res = await fetch(`/api/todolists/${todolistId}/worktrees/`, {
+			const res = await fetch(`/api/todolists/${todolistId}/worktrees/add/`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
