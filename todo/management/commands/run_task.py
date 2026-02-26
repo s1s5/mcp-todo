@@ -464,4 +464,3 @@ class Command(BaseCommand):
             self.stderr.write(self.style.WARNING(f"Stashを復元することができませんでした。{e}"))
         else:
             self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
-
