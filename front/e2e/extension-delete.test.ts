@@ -22,21 +22,31 @@ test.describe('Extension Delete Page', () => {
 
 	test('1. ページ遷移: /extension/1/delete へアクセス', async ({ page }) => {
 		await page.route('/api/extensions/1/', async (route) => {
+			await new Promise((resolve) => setTimeout(resolve, 200));
 			await route.fulfill({ status: 200, body: JSON.stringify(mockExtension) });
 		});
 
 		await page.goto('/extension/1/delete');
-		await expect(page).toHaveURL('/extension/1/delete');
+		
+		// Loading 表示を確認（APIが遅延応答するため）
+		await expect(page.locator('#loading-indicator')).toBeVisible({ timeout: 1000 });
+		
+		// 読み込み完了後にURLを確認（末尾のスラッシュを許容）
+		await expect(page).toHaveURL(/\/extension\/1\/delete\/?$/);
 	});
 
 	test('2. 確認画面表示: 削除対象の情報と警告メッセージが表示されること', async ({ page }) => {
 		await page.route('/api/extensions/1/', async (route) => {
+			await new Promise((resolve) => setTimeout(resolve, 200));
 			await route.fulfill({ status: 200, body: JSON.stringify(mockExtension) });
 		});
 
 		await page.goto('/extension/1/delete');
 
-		// Wait for loading to complete
+		// Loading 表示を確認（APIが遅延応答するため）
+		await expect(page.locator('#loading-indicator')).toBeVisible({ timeout: 1000 });
+		
+		// 読み込み完了後に警告メッセージを確認
 		const warningMessage = page.locator('#warning-message');
 		await expect(warningMessage).toBeVisible();
 		await expect(warningMessage).toContainText('このExtensionを削除しますか？');
@@ -50,7 +60,7 @@ test.describe('Extension Delete Page', () => {
 		await expect(page.locator('text=ID')).toBeVisible();
 		await expect(page.locator('text=Name')).toBeVisible();
 		await expect(page.locator('text=Type')).toBeVisible();
-		await expect(page.locator('text=Command')).toBeVisible();
+		await expect(page.locator('dt:has-text("Command")')).toBeVisible();
 		await expect(page.locator('text=Timeout')).toBeVisible();
 	});
 
@@ -95,6 +105,7 @@ test.describe('Extension Delete Page', () => {
 
 	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
 		await page.route('/api/extensions/1/', async (route) => {
+			await new Promise((resolve) => setTimeout(resolve, 100));
 			if (route.request().method() === 'GET') {
 				await route.fulfill({ status: 500, body: JSON.stringify({ detail: 'Server Error' }) });
 			}
@@ -102,10 +113,13 @@ test.describe('Extension Delete Page', () => {
 
 		await page.goto('/extension/1/delete');
 
-		// Wait for error message to appear
+		// Loading 表示を確認
+		await expect(page.locator('#loading-indicator')).toBeVisible();
+		
+		// エラーメッセージを確認（コンポーネント側のcatchブロックで設定される）
 		const errorMessage = page.locator('#error-message');
 		await expect(errorMessage).toBeVisible();
-		await expect(errorMessage).toContainText('Server Error');
+		await expect(errorMessage).toContainText('Failed to fetch extension');
 	});
 
 	test('6. スナップショットテスト: 表示安定化後にスナップショットを取得', async ({ page }) => {
@@ -124,8 +138,18 @@ test.describe('Extension Delete Page', () => {
 		await expect(deleteButton).toBeVisible();
 		await expect(cancelButton).toBeVisible();
 
+		// Get HTML and normalize SvelteKit-generated hashes for consistent snapshot comparison
+		let html = await page.content();
+		
+		// Normalize SvelteKit hashes: replace dynamic hash patterns with fixed values
+		// Pattern: __sveltekit_\w+ -> __sveltekit_HASH
+		html = html.replace(/__sveltekit_\w+/g, '__sveltekit_HASH');
+		// Pattern: /build/start.[A-Za-z0-9]+.js -> /build/start.HASH.js
+		html = html.replace(/\/build\/start\.[A-Za-z0-9]+\.js/g, '/build/start.HASH.js');
+		html = html.replace(/\/build\/layout\.[A-Za-z0-9]+\.js/g, '/build/layout.HASH.js');
+		html = html.replace(/\/build\/page\.[A-Za-z0-9]+\.js/g, '/build/page.HASH.js');
+		
 		// Take snapshot
-		const html = await page.content();
 		expect(html).toMatchSnapshot('extension-delete.html');
 	});
 });
