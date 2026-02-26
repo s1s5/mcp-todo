@@ -293,9 +293,10 @@
 		// タブの可視状態変更を監視
 		document.addEventListener('visibilitychange', () => {
 			if (!document.hidden) {
-				// タブが前面に表示された → タイトルをリセットして再取得
+				// タブが前面に表示された → タイトルをリセットして最新データを取得
 				hasNotification = false;
 				updateTitleNotification();
+				fetchTodosSilent();
 			}
 		});
 	});
