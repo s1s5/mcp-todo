@@ -107,7 +107,11 @@ def get_git_worktrees(workdir):
                     worktrees.append(current_entry)
                 current_entry = {'path': line[9:].strip()}  # "worktree " を除去
             elif line.startswith('branch '):
-                current_entry['branch'] = line[7:].strip()  # "branch " を除去
+                branch = line[7:].strip()  # "branch " を除去
+                # refs/heads/ プレフィックスを除去
+                if branch.startswith('refs/heads/'):
+                    branch = branch[11:]
+                current_entry['branch'] = branch
             elif line == '':
                 # 空行はエントリの区切り
                 if current_entry:
