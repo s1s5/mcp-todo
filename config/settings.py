@@ -129,3 +129,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
 }
+
+# Worktree settings
+import os
+WORKTREE_ROOT = os.environ.get('WORKTREE_ROOT', os.path.expanduser('~/work/worktrees'))

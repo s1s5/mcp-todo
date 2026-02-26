@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 import subprocess
 import logging
 import os
+from django.conf import settings
 from .models import Todo, TodoList, Agent, Extension
 from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, ExtensionSerializer
 
@@ -214,6 +215,136 @@ class TodoListViewSet(viewsets.ModelViewSet):
         todolist = self.get_object()
         branches = get_git_branches(todolist.workdir)
         return Response({'branches': branches})
+
+    @action(detail=True, methods=['post'], url_path='worktrees')
+    def add_worktree(self, request, pk=None):
+        """
+        新しいworktreeを追加
+        
+        Request body: {"name": "ディレクトリ名", "branch": "ブランチ名"}
+        - name: 必須、/ が含まれないこと
+        - branch: 必須
+        """
+        import re
+
+        todolist = self.get_object()
+        worktree_name = request.data.get('name', '').strip()
+        branch = request.data.get('branch', '').strip()
+
+        # バリデーション: name 必须
+        if not worktree_name:
+            return Response(
+                {'error': 'nameは必須です'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # バリデーション: name に / が含まれないこと
+        if '/' in worktree_name:
+            return Response(
+                {'error': 'nameに / を含めることはできません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # バリデーション: name は英数字、ハイフン、アンダースコアのみ許可
+        if not re.match(r'^[a-zA-Z0-9_-]+$', worktree_name):
+            return Response(
+                {'error': 'nameは英数字、ハイフン、アンダースコアのみ使用できます'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # バリデーション: branch 必须
+        if not branch:
+            return Response(
+                {'error': 'branchは必須です'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        worktree_root = settings.WORKTREE_ROOT
+        worktree_path = os.path.join(worktree_root, worktree_name)
+
+        # バリデーション: 同名ディレクトリが存在しないこと
+        if os.path.exists(worktree_path):
+            return Response(
+                {'error': f'同名ディレクトリが既に存在します: {worktree_path}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # worktreeを作成
+        try:
+            result = subprocess.run(
+                ['git', 'worktree', 'add', worktree_path, branch],
+                cwd=todolist.workdir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                logger.error(f"git worktree add failed: {result.stderr}")
+                return Response(
+                    {'error': f'worktreeの作成に失敗しました: {result.stderr}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            return Response({
+                'name': worktree_name,
+                'path': worktree_path,
+                'branch': branch,
+                'message': f'worktree "{worktree_name}" を作成しました'
+            })
+
+        except Exception as e:
+            logger.error(f"add worktree error: {e}")
+            return Response(
+                {'error': f'worktreeの作成に失敗しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['delete'], url_path=r'worktrees/(?P<name>[^/]+)/')
+    def remove_worktree(self, request, pk=None, name=None):
+        """
+        worktreeを削除
+        
+        URL: /api/todolists/{id}/worktrees/{name}/
+        """
+        todolist = self.get_object()
+        worktree_name = name
+
+        worktree_root = settings.WORKTREE_ROOT
+        worktree_path = os.path.join(worktree_root, worktree_name)
+
+        # バリデーション: worktreeが存在すること
+        if not os.path.exists(worktree_path):
+            return Response(
+                {'error': f'worktreeが存在しません: {worktree_path}'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # worktreeを削除
+        try:
+            result = subprocess.run(
+                ['git', 'worktree', 'remove', worktree_path, '--force'],
+                cwd=todolist.workdir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                logger.error(f"git worktree remove failed: {result.stderr}")
+                return Response(
+                    {'error': f'worktreeの削除に失敗しました: {result.stderr}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            return Response(status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"remove worktree error: {e}")
+            return Response(
+                {'error': f'worktreeの削除に失敗しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class AgentViewSet(viewsets.ModelViewSet):
