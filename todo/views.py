@@ -5,6 +5,7 @@ from rest_framework.pagination import LimitOffsetPagination
 from django.shortcuts import get_object_or_404
 import subprocess
 import logging
+import os
 from .models import Todo, TodoList, Agent, Extension
 from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, ExtensionSerializer
 
@@ -25,6 +26,18 @@ def check_git_repository(workdir):
     Raises:
         ValueError: git repositoryでない場合
     """
+    # workdir の値をログ出力（デバッグ用）
+    logger.info(f"check_git_repository: workdir={workdir}")
+    
+    # workdir が None や空の場合のチェック
+    if not workdir:
+        raise ValueError("workdirが指定されていません")
+    
+    # パスが存在しない場合のチェック
+    if not os.path.exists(workdir):
+        logger.error(f"指定されたパスが存在しません: {workdir}")
+        raise ValueError(f"指定されたパスが存在しません: {workdir}")
+    
     try:
         result = subprocess.run(
             ['git', '-C', workdir, 'rev-parse', '--is-inside-work-tree'],
@@ -32,6 +45,12 @@ def check_git_repository(workdir):
             text=True,
             timeout=30
         )
+        
+        # git コマンドのエラーログ出力
+        if result.returncode != 0:
+            logger.error(f"git rev-parse failed in {workdir}: {result.stderr}")
+        if result.stderr:
+            logger.warning(f"git rev-parse stderr in {workdir}: {result.stderr}")
         
         if result.returncode != 0 or result.stdout.strip() != 'true':
             raise ValueError(f"指定されたパスはgit repositoryではありません: {workdir}")
