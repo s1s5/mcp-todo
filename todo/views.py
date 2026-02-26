@@ -26,11 +26,11 @@ def check_git_repository(workdir):
     Raises:
         ValueError: git repositoryでない場合
     """
-    # workdir の値をログ出力（デバッグ用）
-    logger.info(f"check_git_repository: workdir={workdir}")
+    logging.info(f"check_git_repository called with workdir: {workdir}")
     
     # workdir が None や空の場合のチェック
     if not workdir:
+        logger.error(f"workdirがNoneまたは空です: {workdir}")
         raise ValueError("workdirが指定されていません")
     
     # パスが存在しない場合のチェック
@@ -79,6 +79,8 @@ def get_git_worktrees(workdir):
     Raises:
         ValueError: git repositoryでない場合
     """
+    logging.info(f"get_git_worktrees called with workdir: {workdir}")
+    
     # まずgit repositoryかどうかをチェック
     check_git_repository(workdir)
     
@@ -318,6 +320,8 @@ class TodoViewSet(viewsets.ModelViewSet):
     def worktrees(self, request, pk=None):
         """指定されたTodoが所属するTodoListのworkdirでgit worktree listを実行し、結果を取得"""
         todo = self.get_object()
+        logging.info(f"todo.todo_list.workdir = {todo.todo_list.workdir}")
+        logging.info(f"todo.todo_list.id = {todo.todo_list.id}")
         try:
             worktrees = get_git_worktrees(todo.todo_list.workdir)
             return Response({'workdir': todo.todo_list.workdir, 'worktrees': worktrees})
