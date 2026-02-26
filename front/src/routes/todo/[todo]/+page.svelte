@@ -513,7 +513,7 @@
 							{:else if loadingWorktrees && worktrees.length === 0}
 								<p class="text-gray-500 text-sm">Loading...</p>
 							{:else if worktrees.length > 0}
-								<div class="flex items-center gap-2">
+								<div class="flex flex-col gap-2">
 									<select
 										bind:value={selectedWorktreePath}
 										disabled={loadingWorktrees}
