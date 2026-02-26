@@ -113,7 +113,7 @@ test.describe('Todo Create Page', () => {
 		await expect(cancelButton).toBeVisible();
 
 		// Take HTML snapshot
-		const main = page.locator('main');
+		const main = page.locator('.p-6.max-w-2xl.mx-auto');
 		await expect(main).toBeVisible();
 		const html = await main.innerHTML();
 		expect(html).toMatchSnapshot('todo-create.html');
