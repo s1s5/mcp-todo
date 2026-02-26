@@ -195,7 +195,7 @@
 					todo.id === id ? { ...todo, status: previousStatus } : todo
 				);
 			}
-			toast.push('Failed to start todo', { type: 'error' });
+			toast.push('Failed to start todo');
 		}
 	}
 
@@ -223,7 +223,7 @@
 					todo.id === id ? { ...todo, status: previousStatus } : todo
 				);
 			}
-			toast.push('Failed to cancel todo', { type: 'error' });
+			toast.push('Failed to cancel todo');
 		}
 	}
 
