@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/stores';
 	import { toast } from '@zerodevx/svelte-toast';
+    import { browser } from "$app/environment";
 
 	interface Todo {
 		id: number;
@@ -287,7 +288,9 @@
 		if (pollInterval) {
 			clearInterval(pollInterval);
 		}
-		document.removeEventListener('visibilitychange', () => {});
+        if (browser) {
+		  document.removeEventListener('visibilitychange', () => {});
+        }
 	});
 </script>
 
