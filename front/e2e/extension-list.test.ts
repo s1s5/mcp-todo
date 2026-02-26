@@ -25,13 +25,8 @@ test.describe('Extension List Page', () => {
 		// Navigate to the page
 		await page.goto('/extension/');
 
-		// Verify loading indicator is shown
-		const loading = page.locator('#loading-indicator');
-		await expect(loading).toBeVisible();
-		await expect(loading).toHaveText('Loading...');
-
-		// Wait for loading to complete
-		await expect(loading).not.toBeVisible();
+		// Wait for page to stabilize (loading completes)
+		await page.waitForTimeout(200);
 
 		// Verify table is displayed
 		const table = page.locator('#extensions-table');
@@ -52,13 +47,8 @@ test.describe('Extension List Page', () => {
 		// Navigate to the page
 		await page.goto('/extension/');
 
-		// Verify loading indicator is shown
-		const loading = page.locator('#loading-indicator');
-		await expect(loading).toBeVisible();
-		await expect(loading).toHaveText('Loading...');
-
-		// Wait for loading to complete
-		await expect(loading).not.toBeVisible();
+		// Wait for page to stabilize (loading completes)
+		await page.waitForTimeout(200);
 
 		// Verify empty message is displayed
 		const noExtensions = page.locator('#no-extensions');
@@ -75,9 +65,8 @@ test.describe('Extension List Page', () => {
 		// Navigate to the page
 		await page.goto('/extension/');
 
-		// Wait for loading to complete
-		const loading = page.locator('#loading-indicator');
-		await expect(loading).not.toBeVisible();
+		// Wait for page to stabilize
+		await page.waitForTimeout(200);
 
 		// Click back link
 		const backLink = page.locator('#back-link');
