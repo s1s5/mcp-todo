@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('TodoList Create Page', () => {
 	test('should navigate to create page', async ({ page }) => {
 		await page.goto('/todolist/create');
-		await expect(page).toHaveURL('/todolist/create');
+		await expect(page).toHaveURL('/todolist/create/');
 	});
 
 	test('should display empty workdir field and Create button', async ({ page }) => {
