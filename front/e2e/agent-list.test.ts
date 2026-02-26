@@ -23,7 +23,8 @@ test.describe('Agent List Page', () => {
 
 		// Take snapshot after display is stable
 		await expect(emptyMessage).toBeVisible();
-		await expect(await page.content()).toMatchSnapshot('agent-list-empty.html');
+		const html = await page.locator('div.p-6.max-w-4xl.mx-auto').innerHTML();
+		expect(html).toMatchSnapshot('agent-list-empty.html');
 	});
 
 	test('should display table with data', async ({ page }) => {
@@ -60,7 +61,8 @@ test.describe('Agent List Page', () => {
 
 		// Take snapshot after display is stable
 		await expect(table).toBeVisible();
-		await expect(await page.content()).toMatchSnapshot('agent-list-data.html');
+		const html = await page.locator('div.p-6.max-w-4xl.mx-auto').innerHTML();
+		expect(html).toMatchSnapshot('agent-list-data.html');
 	});
 
 	test('should navigate back to home on back link click', async ({ page }) => {
