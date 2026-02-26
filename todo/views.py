@@ -66,6 +66,47 @@ def get_git_worktrees(workdir):
         logger.error(f"git worktree list error in {workdir}: {e}")
         return []
 
+def get_git_branches(workdir):
+    """
+    指定されたworkdirで git branch -a を実行し、ブランチ名一覧を取得する
+    
+    Args:
+        workdir: gitリポジトリのルートディレクトリ
+        
+    Returns:
+        list: ブランチ名のリスト（'* 'は除去）
+              エラー発生時は空リストを返す
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '-a'],
+            cwd=workdir,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"git branch -a failed in {workdir}: {result.stderr}")
+            return []
+        
+        branches = []
+        for line in result.stdout.splitlines():
+            branch = line.strip()
+            # 先頭の '* ' を除去
+            if branch.startswith('* '):
+                branch = branch[2:]
+            branches.append(branch)
+        
+        return branches
+        
+    except subprocess.TimeoutExpired:
+        logger.error(f"git branch -a timeout in {workdir}")
+        return []
+    except Exception as e:
+        logger.error(f"git branch -a error in {workdir}: {e}")
+        return []
+
 
 class TodoPagination(LimitOffsetPagination):
     """Todo用ページネーション: 1ページ50件"""
@@ -95,6 +136,13 @@ class TodoListViewSet(viewsets.ModelViewSet):
         todolist = self.get_object()
         worktrees = get_git_worktrees(todolist.workdir)
         return Response({'worktrees': worktrees})
+    
+    @action(detail=True, methods=['get'])
+    def branches(self, request, pk=None):
+        """指定されたTodoListのworkdirでgit branch -aを実行し、ブランチ名一覧を取得"""
+        todolist = self.get_object()
+        branches = get_git_branches(todolist.workdir)
+        return Response({'branches': branches})
 
 
 class AgentViewSet(viewsets.ModelViewSet):
@@ -207,3 +255,10 @@ class TodoViewSet(viewsets.ModelViewSet):
         todo = self.get_object()
         worktrees = get_git_worktrees(todo.todo_list.workdir)
         return Response({'worktrees': worktrees})
+    
+    @action(detail=True, methods=['get'])
+    def branches(self, request, pk=None):
+        """指定されたTodoが所属するTodoListのworkdirでgit branch -aを実行し、ブランチ名一覧を取得"""
+        todo = self.get_object()
+        branches = get_git_branches(todo.todo_list.workdir)
+        return Response({'branches': branches})
