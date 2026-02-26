@@ -142,25 +142,25 @@
 			<div class="px-6 py-4 space-y-4">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">TodoList</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">TodoList</div>
 						<p class="text-gray-900">{todo.todo_list_name || `ID: ${todo.todo_list}`}</p>
 					</div>
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">Agent</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">Agent</div>
 						<p class="text-gray-900">{todo.agent_name || (todo.agent ? `ID: ${todo.agent}` : '-')}</p>
 					</div>
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">Branch</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">Branch</div>
 						<p class="text-gray-900 font-mono">{todo.branch_name || '-'}</p>
 					</div>
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">Timeout</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">Timeout</div>
 						<p class="text-gray-900">{todo.timeout} 秒</p>
 					</div>
 				</div>
 
 				<div>
-					<label class="block text-sm font-medium text-gray-500 mb-1">Prompt</label>
+					<div class="block text-sm font-medium text-gray-500 mb-1">Prompt</div>
 					<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap">
 						{todo.prompt || '-'}
 					</div>
@@ -168,7 +168,7 @@
 
 				{#if todo.ref_files && todo.ref_files.length > 0}
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">参照ファイル</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">参照ファイル</div>
 						<ul class="list-disc list-inside text-gray-900">
 							{#each todo.ref_files as file}
 								<li class="font-mono text-sm">{file}</li>
@@ -179,7 +179,7 @@
 
 				{#if todo.edit_files && todo.edit_files.length > 0}
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">編集ファイル</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">編集ファイル</div>
 						<ul class="list-disc list-inside text-gray-900">
 							{#each todo.edit_files as file}
 								<li class="font-mono text-sm">{file}</li>
@@ -190,11 +190,11 @@
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">作成日</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">作成日</div>
 						<p class="text-gray-900">{formatDate(todo.created_at)}</p>
 					</div>
 					<div>
-						<label class="block text-sm font-medium text-gray-500 mb-1">更新日</label>
+						<div class="block text-sm font-medium text-gray-500 mb-1">更新日</div>
 						<p class="text-gray-900">{formatDate(todo.updated_at)}</p>
 					</div>
 				</div>
