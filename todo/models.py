@@ -77,7 +77,7 @@ class Todo(models.Model):
     )
     output = models.TextField(null=True, blank=True, help_text="実行結果")
     validation_command = models.CharField(max_length=500, blank=True, help_text="完了判断用コマンド")
-    timeout = models.IntegerField(default=3600, help_text="タイムアウト秒数")
+    timeout = models.IntegerField(default=900, help_text="タイムアウト秒数")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     branch_name = models.CharField(max_length=255, default="")
