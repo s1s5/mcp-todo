@@ -39,6 +39,10 @@
 	let currentTodoIds: number[] = $state([]);
 	let pollInterval: ReturnType<typeof setInterval> | null = $state(null);
 	
+	// タイトル通知用
+	let originalTitle = 'Todos';
+	let hasNotification = $state(false);
+	
 	// ページネーション用
 	let totalCount = $state(0);
 	let currentPage = $state(1);
@@ -157,6 +161,11 @@
 			const newIds = fetchedIds.filter(id => !currentTodoIds.includes(id));
 			if (newIds.length > 0) {
 				newTodosDetected = true;
+				// タブが非表示の場合はタイトル通知を設定
+				if (document.hidden) {
+					hasNotification = true;
+					updateTitleNotification();
+				}
 			}
 
 			// Update existing todos by ID, preserve current order
@@ -248,6 +257,15 @@
 		}
 	}
 
+	// タイトル通知を更新する関数
+	function updateTitleNotification() {
+		if (hasNotification) {
+			document.title = '● 未確認の変更 - Todos';
+		} else {
+			document.title = originalTitle;
+		}
+	}
+
 	onMount(() => {
 		pageSize = calculatePageSize();  // 画面サイズに基づいてpageSizeを計算
 		currentPage = getPageFromURL();
@@ -255,12 +273,21 @@
 		fetchTodos();
 		// Start polling every 5 seconds
 		pollInterval = setInterval(fetchTodosSilent, 5000);
+		// タブの可視状態変更を監視
+		document.addEventListener('visibilitychange', () => {
+			if (!document.hidden) {
+				// タブが前面に表示された → タイトルをリセットして再取得
+				hasNotification = false;
+				updateTitleNotification();
+			}
+		});
 	});
 
 	onDestroy(() => {
 		if (pollInterval) {
 			clearInterval(pollInterval);
 		}
+		document.removeEventListener('visibilitychange', () => {});
 	});
 </script>
 
