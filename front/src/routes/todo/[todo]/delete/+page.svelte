@@ -127,7 +127,7 @@
 	{/if}
 
 	{#if loading}
-		<p class="text-gray-500">Loading...</p>
+		<p class="text-gray-500" id="loading-message">Loading...</p>
 	{:else if todo}
 		<div class="bg-white shadow rounded-lg overflow-hidden">
 			<div class="px-6 py-4 border-b border-gray-200 bg-red-50">
@@ -201,8 +201,8 @@
 		</div>
 
 		<!-- 警告メッセージと削除ボタン -->
-		<div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-			<p class="text-red-800 font-semibold text-center mb-4">
+		<div class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg" id="warning-message">
+			<p class="text-red-800 font-semibold text-center mb-4" id="warning-text">
 				このTodoを削除しますか？
 			</p>
 			<p class="text-red-600 text-sm text-center mb-4">
@@ -211,6 +211,7 @@
 			<div class="flex justify-center gap-4">
 				<a
 					href="/todo/{$page.params.todo}"
+					id="cancel-button"
 					class="px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
 				>
 					キャンセル
@@ -218,6 +219,7 @@
 				<button
 					onclick={deleteTodo}
 					disabled={deleting}
+					id="delete-button"
 					class="px-6 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition disabled:opacity-50"
 				>
 					{deleting ? '削除中...' : '削除'}

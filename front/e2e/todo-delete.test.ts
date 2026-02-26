@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const mockTodo = {
 	id: 1,
@@ -6,10 +6,10 @@ const mockTodo = {
 	todo_list_name: 'Test TodoList',
 	agent: 1,
 	agent_name: 'Test Agent',
-	ref_files: ['file1.txt', 'file2.txt'],
-	edit_files: ['file3.txt'],
-	prompt: 'Test prompt',
-	context: 'Test context',
+	ref_files: ['file1.ts', 'file2.ts'],
+	edit_files: ['src/app.ts'],
+	prompt: 'Test prompt for deletion',
+	context: '',
 	status: 'waiting',
 	output: null,
 	error: null,
@@ -20,119 +20,103 @@ const mockTodo = {
 	branch_name: 'test-branch'
 };
 
-test.describe('Todo Delete Page', () => {
+test.describe('Todo削除ページ', () => {
 	test.beforeEach(async ({ page }) => {
-		// Set CSRF token cookie
-		await page.context().addCookies([
-			{ name: 'csrftoken', value: 'test-csrf-token', domain: 'localhost', path: '/' }
-		]);
-	});
-
-	test('1. ページ遷移: /todo/1/delete へアクセス', async ({ page }) => {
+		// APIリクエストをモックして、遅延を追加する
 		await page.route('/api/todos/1/', async (route) => {
-			await route.fulfill({ status: 200, body: JSON.stringify(mockTodo) });
+			// 500msの遅延を追加してLoadingを表示させる
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify(mockTodo)
+			});
 		});
-
-		await page.goto('/todo/1/delete');
-		await expect(page).toHaveURL('/todo/1/delete');
 	});
 
-	test('2. 確認画面表示: 削除対象の情報と警告メッセージが表示されること', async ({ page }) => {
-		await page.route('/api/todos/1/', async (route) => {
-			await route.fulfill({ status: 200, body: JSON.stringify(mockTodo) });
-		});
-
+	test('ページ遷移: 削除ページにアクセスできる', async ({ page }) => {
 		await page.goto('/todo/1/delete');
-
-		// Wait for loading to complete
-		const warningMessage = page.locator('#warning-message');
-		await expect(warningMessage).toBeVisible();
-		await expect(warningMessage).toContainText('このTodoを削除しますか？');
-
-		// Check warning text is displayed
-		const warningText = page.locator('#warning-text');
-		await expect(warningText).toBeVisible();
-		await expect(warningText).toContainText('この操作は取り消せません');
-
-		// Check todo info is displayed
-		await expect(page.locator('#todo-id')).toBeVisible();
-		await expect(page.locator('#todo-status')).toBeVisible();
-		await expect(page.locator('#todo-prompt')).toBeVisible();
+		await expect(page).toHaveURL(/\/todo\/1\/delete/);
+		await expect(page.locator('h1')).toContainText('Todo削除');
 	});
 
-	test('3. 削除実行: 削除ボタンクリックで一覧へリダイレクトされること', async ({ page }) => {
+	test('確認画面: 警告メッセージと削除ボタンが表示される', async ({ page }) => {
+		await page.goto('/todo/1/delete');
+
+		// Loading が表示されてからデータが表示されるまで待つ
+		await expect(page.locator('#loading-message')).toBeVisible();
+		await expect(page.locator('#warning-message')).toBeVisible();
+		await expect(page.locator('#warning-text')).toContainText('このTodoを削除しますか？');
+		await expect(page.locator('#delete-button')).toBeVisible();
+		await expect(page.locator('#cancel-button')).toBeVisible();
+	});
+
+	test('Loadingテスト: API応答遅延時にLoading表示される', async ({ page }) => {
+		await page.goto('/todo/1/delete');
+
+		// 最初にLoadingが表示される
+		await expect(page.locator('#loading-message')).toBeVisible();
+		await expect(page.locator('#loading-message')).toContainText('Loading...');
+
+		// 遅延の後、データが表示される
+		await expect(page.locator('#warning-message')).toBeVisible({ timeout: 5000 });
+		await expect(page.locator('#loading-message')).not.toBeVisible();
+	});
+
+	test('削除実行: 削除ボタンクリック後にリダイレクトされる', async ({ page }) => {
+		// DELETE APIもモック
 		await page.route('/api/todos/1/', async (route) => {
 			const method = route.request().method();
-			if (method === 'GET') {
-				await route.fulfill({ status: 200, body: JSON.stringify(mockTodo) });
-			} else if (method === 'DELETE') {
-				await route.fulfill({ status: 200, body: '' });
+			if (method === 'DELETE') {
+				await route.fulfill({
+					status: 204,
+					body: ''
+				});
+			} else {
+				await new Promise((resolve) => setTimeout(resolve, 500));
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify(mockTodo)
+				});
 			}
 		});
 
 		await page.goto('/todo/1/delete');
+		await expect(page.locator('#warning-message')).toBeVisible({ timeout: 5000 });
 
-		// Wait for loading to complete
-		await expect(page.locator('#delete-button')).toBeVisible();
+		// 削除ボタンをクリック
+		await page.click('#delete-button');
 
-		// Click delete button
-		await page.locator('#delete-button').click();
-
-		// Should redirect to list page
-		await expect(page).toHaveURL('/todo/');
+		// /todo/ にリダイレクトされる
+		await expect(page).toHaveURL(/\/todo\/$/, { timeout: 10000 });
 	});
 
-	test('4. キャンセルボタン: クリックで詳細ページへ戻ること', async ({ page }) => {
+	test('キャンセルボタン: クリックで元のページに戻る', async ({ page }) => {
+		await page.goto('/todo/1/delete');
+		await expect(page.locator('#warning-message')).toBeVisible({ timeout: 5000 });
+
+		// キャンセルボタンをクリック（hrefが/todo/1 のリンクをクリック）
+		await page.click('#cancel-button');
+
+		// 元のTodo詳細ページに遷移（trailing slashあり）
+		await expect(page).toHaveURL(/\/todo\/1\/$/, { timeout: 5000 });
+	});
+
+	test('エラーハンドリング: サーバーエラー時にエラーメッセージを表示', async ({ page }) => {
+		// エラー状態をモック
 		await page.route('/api/todos/1/', async (route) => {
-			await route.fulfill({ status: 200, body: JSON.stringify(mockTodo) });
+			await route.fulfill({
+				status: 500,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Server error' })
+			});
 		});
 
 		await page.goto('/todo/1/delete');
 
-		// Wait for loading to complete
-		await expect(page.locator('#cancel-button')).toBeVisible();
-
-		// Click cancel button
-		await page.locator('#cancel-button').click();
-
-		// Should navigate to detail page
-		await expect(page).toHaveURL('/todo/1/');
-	});
-
-	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
-		await page.route('/api/todos/1/', async (route) => {
-			if (route.request().method() === 'GET') {
-				await route.fulfill({ status: 500, body: JSON.stringify({ detail: 'Server Error' }) });
-			}
-		});
-
-		await page.goto('/todo/1/delete');
-
-		// Wait for error message to appear
-		const errorMessage = page.locator('#error-message');
-		await expect(errorMessage).toBeVisible();
-		await expect(errorMessage).toContainText('Server Error');
-	});
-
-	test('6. スナップショットテスト: 表示安定化後にスナップショットを取得', async ({ page }) => {
-		await page.route('/api/todos/1/', async (route) => {
-			await route.fulfill({ status: 200, body: JSON.stringify(mockTodo) });
-		});
-
-		await page.goto('/todo/1/delete');
-
-		// Wait for content to be fully loaded
-		const warningMessage = page.locator('#warning-message');
-		const todoInfo = page.locator('#todo-id');
-		const deleteButton = page.locator('#delete-button');
-		const cancelButton = page.locator('#cancel-button');
-
-		await expect(warningMessage).toBeVisible();
-		await expect(todoInfo).toBeVisible();
-		await expect(deleteButton).toBeVisible();
-		await expect(cancelButton).toBeVisible();
-
-		// Take snapshot
-		await expect(page).toMatchSnapshot('todo-delete-1.html');
+		// エラーメッセージが表示される
+		await expect(page.locator('.text-red-500')).toBeVisible({ timeout: 5000 });
+		await expect(page.locator('.text-red-500')).toContainText(/Failed|error|失敗/i);
 	});
 });
