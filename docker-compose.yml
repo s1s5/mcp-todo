@@ -1,6 +1,6 @@
 x-py313-base:
   &py313-base
-  image: python:3.13-slim
+  image: python:3.13
   volumes:
     - ./:/src
     - /home:/home

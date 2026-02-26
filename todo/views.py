@@ -45,7 +45,7 @@ def check_git_repository(workdir):
             text=True,
             timeout=30
         )
-        
+
         # git コマンドのエラーログ出力
         if result.returncode != 0:
             logger.error(f"git rev-parse failed in {workdir}: {result.stderr}")
