@@ -22,7 +22,7 @@ test.describe('TodoList Update Page', () => {
 		});
 
 		await page.goto('/todolist/1/update');
-		await expect(page).toHaveURL('/todolist/1/update');
+		await expect(page).toHaveURL('/todolist/1/update/');
 	});
 
 	test('2. 初期値表示: 現在のnameとworkdirが入力済みで表示ること', async ({ page }) => {
