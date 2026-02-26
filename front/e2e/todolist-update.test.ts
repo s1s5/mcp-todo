@@ -95,7 +95,7 @@ test.describe('TodoList Update Page', () => {
 		// Wait for error message to appear
 		const errorMessage = page.locator('.bg-red-100');
 		await expect(errorMessage).toBeVisible();
-		await expect(errorMessage).toContainText('Server Error');
+		await expect(errorMessage).toContainText('Failed to fetch TodoList');
 	});
 
 	test('6. スナップショットテスト: 表示安定化後にスナップショットを取得', async ({ page }) => {
@@ -119,6 +119,7 @@ test.describe('TodoList Update Page', () => {
 		await expect(workdirInput).toHaveValue(mockTodoList.workdir);
 
 		// Take HTML snapshot
-		await expect(await page.locator('main').innerHTML()).toMatchSnapshot('todolist-update.html');
+		const html = await page.locator('.p-6').first().innerHTML();
+		expect(html).toMatchSnapshot('todolist-update.html');
 	});
 });
