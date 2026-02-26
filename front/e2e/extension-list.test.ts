@@ -118,6 +118,6 @@ test.describe('Extension List Page', () => {
 		// Take HTML snapshot of only the relevant content (excluding dynamic script hashes)
 		const content = page.locator('#extensions-table');
 		const html = await content.innerHTML();
-		expect(html).toMatchSnapshot('extension-list-table.html');
+		expect(html).toMatchSnapshot('extension-list.html');
 	});
 });
