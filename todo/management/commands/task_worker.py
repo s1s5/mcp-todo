@@ -338,7 +338,7 @@ class Command(BaseCommand):
 
             now = datetime.now()
             random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
-            todo.branch_name = "ai/{}/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
+            todo.branch_name = "ai/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
             todo.save(update_fields=["branch_name"])
 
         self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始 (workdir: {workdir})"))
