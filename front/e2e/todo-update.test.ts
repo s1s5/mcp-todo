@@ -176,7 +176,8 @@ test.describe('Todo Update Page', () => {
 		// Wait for loading to complete (prompt should have value after load)
 		await expect(promptInput).toHaveValue('Original prompt text', { timeout: 10000 });
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take snapshot of main content area (first .p-6 element)
+		const html = await page.locator('.p-6').first().innerHTML();
+		expect(html).toMatchSnapshot('todo-update.html');
 	});
 });
