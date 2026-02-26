@@ -13,6 +13,7 @@
 		edit_files: string[];
 		prompt: string;
 		title: string | null;
+		system_prompt: string | null;
 		auto_stash: boolean;
 		keep_branch: boolean;
 		context: string;
