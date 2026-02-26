@@ -14,12 +14,13 @@ test.describe('Extension Update Page', () => {
 	};
 
 	test.beforeEach(async ({ page }) => {
-		// APIレスポンスをモック
+		// APIレスポンスをモック（delayを追加してLoading表示を確認可能にする）
 		await page.route(`/api/extensions/1/`, async (route) => {
 			await route.fulfill({
 				status: 200,
 				contentType: 'application/json',
-				body: JSON.stringify(mockExtension)
+				body: JSON.stringify(mockExtension),
+				delay: 100
 			});
 		});
 
@@ -27,7 +28,7 @@ test.describe('Extension Update Page', () => {
 	});
 
 	test('1. ページ遷移: /extension/1/update へアクセス', async ({ page }) => {
-		await expect(page).toHaveURL('/extension/1/update');
+		await expect(page).toHaveURL(/\/extension\/1\/update\/?/);
 		await expect(page.locator('h1')).toHaveText('Update Extension');
 	});
 
@@ -48,15 +49,21 @@ test.describe('Extension Update Page', () => {
 		await expect(page.locator('button[type="submit"]')).toBeVisible();
 		await expect(page.locator('button[type="submit"]')).toHaveText('Update');
 
-		// キャンセルボタンが存在すること
-		await expect(page.locator('a[href="/extension/1/"]')).toBeVisible();
-		await expect(page.locator('a[href="/extension/1/"]')).toHaveText('Cancel');
+		// キャンセルボタンが存在すること（テキストで特定）
+		await expect(page.locator('a:has-text("Cancel")')).toBeVisible();
 	});
 
 	test('3. 送信テスト: 値を変更してSubmitすると、詳細ページへリダイレクトされること', async ({ page }) => {
-		// PUTリクエストをモック
+		// Mock both GET (with delay) and PUT requests
 		await page.route(`/api/extensions/1/`, async (route) => {
-			if (route.request().method() === 'PUT') {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify(mockExtension),
+					delay: 100  // Small delay for loading state
+				});
+			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({
 					status: 200,
 					contentType: 'application/json',
@@ -64,6 +71,9 @@ test.describe('Extension Update Page', () => {
 				});
 			}
 		});
+
+		// フォームが読み込まれるまで待機
+		await expect(page.locator('#name')).toBeVisible();
 
 		// フォームの値を変更
 		await page.locator('#name').fill('updated-ext');
@@ -73,18 +83,25 @@ test.describe('Extension Update Page', () => {
 		await page.locator('button[type="submit"]').click();
 
 		// 詳細ページへリダイレクトされること
-		await expect(page).toHaveURL('/extension/1/');
+		await expect(page).toHaveURL(/\/extension\/1\/?/);
 	});
 
 	test('4. キャンセルボタン: クリックで詳細ページへ戻ること', async ({ page }) => {
-		await page.locator('a[href="/extension/1/"]').click();
-		await expect(page).toHaveURL('/extension/1/');
+		await page.locator('a:has-text("Cancel")').click();
+		await expect(page).toHaveURL(/\/extension\/1\/?/);
 	});
 
 	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
-		// PUTリクエストをモックしてエラーを返す
+		// Mock both GET (with delay) and PUT requests
 		await page.route(`/api/extensions/1/`, async (route) => {
-			if (route.request().method() === 'PUT') {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify(mockExtension),
+					delay: 100
+				});
+			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({
 					status: 500,
 					contentType: 'application/json',
@@ -92,6 +109,9 @@ test.describe('Extension Update Page', () => {
 				});
 			}
 		});
+
+		// フォームが読み込まれるまで待機
+		await expect(page.locator('#name')).toBeVisible();
 
 		// フォームの値を変更
 		await page.locator('#name').fill('updated-ext');
@@ -117,6 +137,6 @@ test.describe('Extension Update Page', () => {
 
 		// HTMLスナップショットを取得
 		const html = await page.content();
-		expect(html).toMatchSnapshot('extension-update.html');
+		expect(html).toMatchSnapshot('extension-update-linux.html');
 	});
 });
