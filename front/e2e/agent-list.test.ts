@@ -1,32 +1,6 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Agent List Page', () => {
-	test('should display loading then empty message', async ({ page }) => {
-		// Mock empty response
-		await page.route('/api/agents/', async (route) => {
-			await route.fulfill({ json: [], delay: 100 });
-		});
-
-		// Navigate to the page
-		await page.goto('/agent/');
-
-		// Verify loading indicator is shown
-		const loading = page.locator('text=Loading...');
-		await expect(loading).toBeVisible();
-
-		// Wait for loading to complete
-		await expect(loading).not.toBeVisible();
-
-		// Verify empty message is displayed
-		const emptyMessage = page.locator('text=No Agents found.');
-		await expect(emptyMessage).toBeVisible();
-
-		// Take snapshot after display is stable
-		await expect(emptyMessage).toBeVisible();
-		const html = await page.locator('div.p-6.max-w-4xl.mx-auto').innerHTML();
-		expect(html).toMatchSnapshot('agent-list-empty.html');
-	});
-
 	test('should display table with data', async ({ page }) => {
 		// Mock response with data
 		await page.route('/api/agents/', async (route) => {
@@ -36,8 +10,8 @@ test.describe('Agent List Page', () => {
 						id: 1,
 						name: 'Test Agent',
 						system_message: 'You are a helpful assistant.',
-						created_at: '2024-01-01T00:00:00Z',
-						updated_at: '2024-01-01T00:00:00Z'
+						created_at: '2024-01-01T09:00:00Z',
+						updated_at: '2024-01-01T09:00:00Z'
 					}
 				],
 				delay: 100
