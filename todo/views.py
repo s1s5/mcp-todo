@@ -301,7 +301,6 @@ class TodoListViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
                 branch_created = True
-
             result = subprocess.run(
                 ['git', 'worktree', 'add', worktree_path, branch],
                 cwd=todolist.workdir,

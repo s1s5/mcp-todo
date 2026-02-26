@@ -7,6 +7,7 @@ x-py313-base:
   environment:
     PYTHONPATH: ./src:/src/.venv/lib/python3.13/site-packages/
     PATH: /src/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    WORKTREES_ROOT: /home/${USER}/work/worktrees
   working_dir: /src
   user: ${USER_ID}:${GROUP_ID}
 
