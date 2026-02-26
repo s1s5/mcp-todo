@@ -33,6 +33,27 @@ from todo.emoji import select_emoji
 from todo.models import Agent, Todo, TodoList
 
 
+class LiteralDumper(yaml.SafeDumper):
+    pass
+
+
+def str_representer(dumper, data):
+    if "\n" in data:
+        # 改行を含む文字列は必ず | で出す
+        return dumper.represent_scalar(
+            "tag:yaml.org,2002:str",
+            data,
+            style="|",
+        )
+    return dumper.represent_scalar(
+        "tag:yaml.org,2002:str",
+        data,
+    )
+
+
+LiteralDumper.add_representer(str, str_representer)
+
+
 def sanitize_prompt(text: str) -> str:
     """
     文字列をjinja2テンプレートとして展開しても同等のものに変換する。
@@ -322,7 +343,7 @@ class Command(BaseCommand):
 
     def build_recipe(self, todo: Todo, agent: Agent):
         sio = io.StringIO()
-        yaml.safe_dump(
+        yaml.dump(
             {
                 "title": "タスク実行",
                 "description": "",
@@ -332,6 +353,8 @@ class Command(BaseCommand):
             },
             sio,
             allow_unicode=True,
+            Dumper=LiteralDumper,
+            sort_keys=False,
         )
         return sio.getvalue()
 
