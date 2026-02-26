@@ -78,7 +78,7 @@ test.describe('TodoList Create Page', () => {
 		await expect(createButton).toHaveText('Create');
 
 		// Verify error message is displayed
-		const errorMessage = page.locator('#error-message');
+		const errorMessage = page.locator('.bg-red-100');
 		await expect(errorMessage).toBeVisible();
 		await expect(errorMessage).toContainText('Internal server error');
 	});
