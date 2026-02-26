@@ -123,7 +123,8 @@
 		try {
 			const res = await fetch(`/api/todolists/${todolistId}/worktrees/`);
 			if (!res.ok) throw new Error('Failed to fetch worktrees');
-			worktrees = await res.json();
+			const data = await res.json();
+			worktrees = data.worktrees || [];
 		} catch (e) {
 			worktreeError = e instanceof Error ? e.message : 'Failed to load worktrees';
 			worktrees = [];
