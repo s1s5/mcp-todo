@@ -1,18 +1,18 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 from django.shortcuts import get_object_or_404
 from .models import Todo, TodoList, Agent, Extension
 from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, ExtensionSerializer
 
 
-class TodoPagination(PageNumberPagination):
+class TodoPagination(LimitOffsetPagination):
     """Todo用ページネーション: 1ページ50件"""
-    page_size = 50
-    page_query_param = 'page'
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+    default_limit = 50
+    limit_query_param = 'limit'
+    offset_query_param = 'offset'
+    max_limit = 100
 
 
 class TodoListViewSet(viewsets.ModelViewSet):
