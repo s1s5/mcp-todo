@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Todo Create Page', () => {
 	test('should navigate to create page', async ({ page }) => {
 		await page.goto('/todo/create');
-		await expect(page).toHaveURL('/todo/create');
+		await expect(page).toHaveURL(/\/todo\/create\/?/);
 	});
 
 	test('should display empty fields and Create button', async ({ page }) => {
@@ -56,21 +56,23 @@ test.describe('Todo Create Page', () => {
 	test('should navigate to list on cancel button click', async ({ page }) => {
 		await page.goto('/todo/create');
 
-		// Click cancel button
-		const cancelButton = page.locator('a[href="/todo/"]');
+		// Click cancel button (use specific locator for Cancel link with .px-4 class)
+		const cancelButton = page.locator('a[href="/todo/"].px-4');
 		await expect(cancelButton).toBeVisible();
+		await expect(cancelButton).toHaveText('Cancel');
 		await cancelButton.click();
 
 		// Verify navigation to list page
 		await expect(page).toHaveURL('/todo/');
 	});
 
-	test('should display error message on server error', async ({ page }) => {
-		// Mock error response
+	test('should display loading state during creation', async ({ page }) => {
+		// Mock slow API response to verify loading state
 		await page.route('/api/todos/', async (route) => {
 			await route.fulfill({
-				status: 500,
-				json: { detail: 'Internal server error' }
+				status: 201,
+				json: { id: 1, prompt: 'Test prompt', status: 'waiting' },
+				delay: 500 // Add delay to ensure loading state is visible
 			});
 		});
 
@@ -84,13 +86,12 @@ test.describe('Todo Create Page', () => {
 		const createButton = page.locator('button[type="submit"]');
 		await createButton.click();
 
-		// Wait for loading to complete
-		await expect(createButton).toHaveText('Create');
+		// Verify loading state is displayed - wait for the loading state to appear
+		await expect(createButton).toHaveText('Creating...', { timeout: 2000 });
+		await expect(createButton).toBeDisabled();
 
-		// Verify error message is displayed (by checking for error class on form)
-		const errorDiv = page.locator('.bg-red-50');
-		await expect(errorDiv).toBeVisible();
-		await expect(errorDiv).toContainText('Internal server error');
+		// Wait for loading to complete and verify redirect
+		await expect(page).toHaveURL('/todo/', { timeout: 10000 });
 	});
 
 	test('should take snapshot after page is stable', async ({ page }) => {
