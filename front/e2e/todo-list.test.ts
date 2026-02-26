@@ -162,7 +162,7 @@ test.describe('Todo List Page', () => {
 		const table = page.locator('#todo-table');
 		await expect(table).toBeVisible();
 
-		// Take snapshot after page is stabilized (using main element's innerHTML)
-		await expect(await page.locator('main').innerHTML()).toMatchSnapshot('todo-list.html');
+		// Take snapshot after page is stabilized (using body element's innerHTML)
+		await expect(await page.locator('body').innerHTML()).toMatchSnapshot('todo-list.html');
 	});
 });
