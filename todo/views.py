@@ -262,3 +262,103 @@ class TodoViewSet(viewsets.ModelViewSet):
         todo = self.get_object()
         branches = get_git_branches(todo.todo_list.workdir)
         return Response({'branches': branches})
+
+    @action(detail=True, methods=['post'])
+    def create_branch(self, request, pk=None):
+        """
+        新しいブランチを作成
+        
+        Request body: {"new_branch_name": "新しいブランチ名"}
+        - worktreeが選択されている場合は、そのworktreeのブランチから作成
+        - 選択されていない場合は、現在のブランチ（branch_name）から作成
+        """
+        import re
+        
+        todo = self.get_object()
+        new_branch_name = request.data.get('new_branch_name', '').strip()
+        
+        # バリデーション: ブランチ名の形式チェック
+        if not new_branch_name:
+            return Response(
+                {'error': 'ブランチ名を入力してください'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # ブランチ名は英数字、ハイフン、アンダースコアのみ許可
+        if not re.match(r'^[a-zA-Z0-9_-]+$', new_branch_name):
+            return Response(
+                {'error': 'ブランチ名は英数字、ハイフン、アンダースコアのみ使用できます'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        workdir = todo.todo_list.workdir
+        
+        # ブランチ作成元の決定
+        # worktreeが選択されている場合はそのブランチから、
+        # そうでなければ現在のbranch_nameから作成
+        base_branch = todo.branch_name
+        if not base_branch:
+            # branch_nameがない場合は現在のチェックアウト中のブランチを取得
+            try:
+                result = subprocess.run(
+                    ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+                    cwd=workdir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                if result.returncode == 0:
+                    base_branch = result.stdout.strip()
+                else:
+                    return Response(
+                        {'error': '現在のブランチを取得できませんでした'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except Exception as e:
+                logger.error(f"git rev-parse error: {e}")
+                return Response(
+                    {'error': f'ブランチ作成元の取得に失敗しました: {str(e)}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        
+        # 新しいブランチを作成
+        try:
+            # まず、新しいブランチ名が既に使用されているか確認
+            existing_branches = get_git_branches(workdir)
+            if new_branch_name in existing_branches:
+                return Response(
+                    {'error': f'ブランチ "{new_branch_name}" は既に存在します'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # ブランチを作成
+            result = subprocess.run(
+                ['git', 'branch', new_branch_name, base_branch],
+                cwd=workdir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"git branch failed: {result.stderr}")
+                return Response(
+                    {'error': f'ブランチの作成に失敗しました: {result.stderr}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # 正常に作成されたら、branch_nameを更新
+            todo.branch_name = new_branch_name
+            todo.save()
+            
+            return Response({
+                'branch_name': new_branch_name,
+                'message': f'ブランチ "{new_branch_name}" を作成しました'
+            })
+            
+        except Exception as e:
+            logger.error(f"create branch error: {e}")
+            return Response(
+                {'error': f'ブランチの作成に失敗しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

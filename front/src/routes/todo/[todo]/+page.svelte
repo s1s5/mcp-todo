@@ -44,6 +44,11 @@
 	let branchError = $state('');
 	let showBranchSelect = $state(false);
 
+	// 新しいブランチ作成用 state
+	let newBranchName = $state('');
+	let creatingBranch = $state(false);
+	let showNewBranchInput = $state(false);
+
 	// worktree選択用 state
 	let worktrees: { path: string; branch: string }[] = $state([]);
 	let loadingWorktrees = $state(false);
@@ -206,6 +211,64 @@
 		} finally {
 			updatingBranch = false;
 		}
+	}
+
+	async function createBranch() {
+		if (!todo || !newBranchName.trim()) return;
+		
+		// ブランチ名のバリデーション
+		const branchNameRegex = /^[a-zA-Z0-9_-]+$/;
+		if (!branchNameRegex.test(newBranchName)) {
+			branchError = 'ブランチ名は英数字、ハイフン、アンダースコアのみ使用できます';
+			return;
+		}
+		
+		creatingBranch = true;
+		branchError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${todo.id}/create-branch/`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin',
+				body: JSON.stringify({ new_branch_name: newBranchName.trim() })
+			});
+			
+			if (!res.ok) {
+				const data = await res.json();
+				throw new Error(data.error || 'Failed to create branch');
+			}
+			
+			const data = await res.json();
+			// 正常に作成されたら、ブランチ一覧を更新して新しいブランチを選択状態にする
+			await fetchBranches();
+			await fetchTodo();
+			
+			// 新しいブランチ名が返ってきていれば選択状態にする
+			if (data.branch_name) {
+				// ブランチ選択UIを閉じる
+				showBranchSelect = false;
+				showNewBranchInput = false;
+				newBranchName = '';
+			}
+		} catch (e) {
+			branchError = e instanceof Error ? e.message : 'Failed to create branch';
+		} finally {
+			creatingBranch = false;
+		}
+	}
+
+	function handleSelectNewBranch() {
+		showNewBranchInput = true;
+	}
+
+	function cancelNewBranch() {
+		showNewBranchInput = false;
+		newBranchName = '';
+		branchError = '';
 	}
 
 	function toggleBranchSelect() {
@@ -491,29 +554,63 @@
 							<span id="branch" class="text-gray-900 font-mono">{todo.branch_name || '-'}</span>
 							{#if todo.status === 'waiting' || todo.status === 'queued'}
 								{#if showBranchSelect}
-									<select
-										value={todo.branch_name || ''}
-										onchange={(e) => updateBranch((e.target as HTMLSelectElement).value)}
-										disabled={updatingBranch || loadingBranches}
-										class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
-									>
-										{#if loadingBranches}
-											<option value="">Loading...</option>
-										{:else if branches.length > 0}
-											{#each branches as branch}
-												<option value={branch}>{branch}</option>
-											{/each}
-										{:else}
-											<option value="">{todo.branch_name || '-'}</option>
-										{/if}
-									</select>
-									<button
-										onclick={() => showBranchSelect = false}
-										disabled={updatingBranch}
-										class="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
-									>
-										キャンセル
-									</button>
+									{#if showNewBranchInput}
+										<div class="flex items-center gap-2">
+											<input
+												type="text"
+												bind:value={newBranchName}
+												placeholder="新しいブランチ名"
+												disabled={creatingBranch}
+												class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 font-mono"
+											/>
+											<button
+												onclick={createBranch}
+												disabled={creatingBranch || !newBranchName.trim()}
+												class="px-2 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50"
+											>
+												{creatingBranch ? '作成中...' : '作成'}
+											</button>
+											<button
+												onclick={cancelNewBranch}
+												disabled={creatingBranch}
+												class="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+											>
+												キャンセル
+											</button>
+										</div>
+									{:else}
+										<select
+											value={todo.branch_name || ''}
+											onchange={(e) => {
+												const value = (e.target as HTMLSelectElement).value;
+												if (value === '__new_branch__') {
+													handleSelectNewBranch();
+												} else {
+													updateBranch(value);
+												}
+											}}
+											disabled={updatingBranch || loadingBranches}
+											class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
+										>
+											{#if loadingBranches}
+												<option value="">Loading...</option>
+											{:else if branches.length > 0}
+												{#each branches as branch}
+													<option value={branch}>{branch}</option>
+												{/each}
+												<option value="__new_branch__">新しいブランチを作成...</option>
+											{:else}
+												<option value="">{todo.branch_name || '-'}</option>
+											{/if}
+										</select>
+										<button
+											onclick={() => showBranchSelect = false}
+											disabled={updatingBranch}
+											class="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+										>
+											キャンセル
+										</button>
+									{/if}
 								{:else}
 									<button
 										onclick={toggleBranchSelect}
