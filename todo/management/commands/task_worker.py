@@ -82,11 +82,20 @@ class Command(BaseCommand):
             default="~/work/worktrees",
             help="worktreeのルートディレクトリ",
         )
+        parser.add_argument(
+            "--max-parallel",
+            type=int,
+            default=None,
+            help="最大並列実行数（環境変数TASK_WORKER_MAX_PARALLELでデフォルト値5を設定可能）",
+        )
 
-    def handle(self, interval: int, worktree_root: str, **options):
+    def handle(self, interval: int, worktree_root: str, max_parallel: int, **options):
         self.stdout.write(self.style.SUCCESS("タスクワーカーを開始しました"))
         self.running_workdirs = {}
         self.worktree_root = os.path.expanduser(worktree_root)
+
+        # 環境変数またはCLI引数から最大並列数を取得
+        self.max_parallel = max_parallel if max_parallel is not None else int(os.environ.get("TASK_WORKER_MAX_PARALLEL", "5"))
 
         while True:
             self.process_loop(interval)
@@ -118,6 +127,11 @@ class Command(BaseCommand):
             return
 
         if next_todo is None:
+            time.sleep(interval)
+            return
+
+        # 最大並列数に達している場合は実行しない
+        if len(self.running_workdirs) >= self.max_parallel:
             time.sleep(interval)
             return
 
