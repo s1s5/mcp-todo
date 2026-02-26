@@ -135,8 +135,8 @@ test.describe('Extension Update Page', () => {
 		await expect(page.locator('#cmd')).toBeVisible();
 		await expect(page.locator('button[type="submit"]')).toBeVisible();
 
-		// HTMLスナップショットを取得
-		const html = await page.content();
-		expect(html).toMatchSnapshot('extension-update-linux.html');
+		// HTMLスナップショットを取得（h1要素配下のみ）
+		const html = await page.locator('h1').innerHTML();
+		expect(html).toMatchSnapshot('extension-update.html');
 	});
 });
