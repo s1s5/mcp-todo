@@ -5,7 +5,7 @@ test.describe('Todo List Page', () => {
 		// Mock response with data - use wildcard to match query params
 		// Add delay to allow loading indicator to be visible
 		await page.route('**/api/todos/**', async (route) => {
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise(resolve => setTimeout(resolve, 200));
 			await route.fulfill({
 				status: 200,
 				json: {
@@ -63,7 +63,7 @@ test.describe('Todo List Page', () => {
 		// Mock empty response - use wildcard to match query params
 		// Add delay to allow loading indicator to be visible
 		await page.route('**/api/todos/**', async (route) => {
-			await new Promise(resolve => setTimeout(resolve, 100));
+			await new Promise(resolve => setTimeout(resolve, 200));
 			await route.fulfill({
 				status: 200,
 				json: {
