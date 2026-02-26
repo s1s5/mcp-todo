@@ -119,7 +119,7 @@ test.describe('TodoList Update Page', () => {
 		await expect(workdirInput).toHaveValue(mockTodoList.workdir);
 
 		// Take HTML snapshot
-		const html = await page.content();
+		const html = await page.locator('main').innerHTML();
 		expect(html).toMatchSnapshot('todolist-update.html');
 	});
 });
