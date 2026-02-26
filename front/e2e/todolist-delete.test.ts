@@ -132,6 +132,7 @@ test.describe('TodoList Delete Page', () => {
 		await expect(cancelButton).toBeVisible();
 
 		// Take HTML snapshot
-		await expect(await page.locator('div.p-6.max-w-2xl.mx-auto').innerHTML()).toMatchSnapshot('todolist-delete.html');
+		const html = await page.locator('div.p-6.max-w-2xl.mx-auto').innerHTML();
+		expect(html).toMatchSnapshot('todolist-delete.html');
 	});
 });
