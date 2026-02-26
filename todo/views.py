@@ -3,8 +3,68 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 from django.shortcuts import get_object_or_404
+import subprocess
+import logging
 from .models import Todo, TodoList, Agent, Extension
 from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, ExtensionSerializer
+
+
+logger = logging.getLogger(__name__)
+
+
+def get_git_worktrees(workdir):
+    """
+    指定されたworkdirで git worktree list を実行し、結果を取得する
+    
+    Args:
+        workdir: gitリポジトリのルートディレクトリ
+        
+    Returns:
+        list: [{"path": "...", "branch": "..."}, ...] のリスト
+              エラー発生時は空リストを返す
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'worktree', 'list', '--porcelain'],
+            cwd=workdir,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"git worktree list failed in {workdir}: {result.stderr}")
+            return []
+        
+        worktrees = []
+        # porcelain format: 各worktreeは "worktree <path>" で始まり、"branch <branch>" が続く
+        current_entry = {}
+        for line in result.stdout.splitlines():
+            if line.startswith('worktree '):
+                if current_entry:
+                    # 前のエントリを追加
+                    worktrees.append(current_entry)
+                current_entry = {'path': line[9:].strip()}  # "worktree " を除去
+            elif line.startswith('branch '):
+                current_entry['branch'] = line[7:].strip()  # "branch " を除去
+            elif line == '':
+                # 空行はエントリの区切り
+                if current_entry:
+                    worktrees.append(current_entry)
+                    current_entry = {}
+        
+        # 最後のエントリを追加
+        if current_entry:
+            worktrees.append(current_entry)
+        
+        return worktrees
+        
+    except subprocess.TimeoutExpired:
+        logger.error(f"git worktree list timeout in {workdir}")
+        return []
+    except Exception as e:
+        logger.error(f"git worktree list error in {workdir}: {e}")
+        return []
 
 
 class TodoPagination(LimitOffsetPagination):
@@ -18,9 +78,23 @@ class TodoPagination(LimitOffsetPagination):
 class TodoListViewSet(viewsets.ModelViewSet):
     """
     TodoListのCRUD API
+    
+    - GET /api/todolists/ - 全件取得
+    - POST /api/todolists/ - 新規作成
+    - GET /api/todolists/{id}/ - 詳細取得
+    - PUT /api/todolists/{id}/ - 更新
+    - DELETE /api/todolists/{id}/ - 削除
+    - GET /api/todolists/{id}/worktrees/ - git worktree一覧取得
     """
     queryset = TodoList.objects.all()
     serializer_class = TodoListSerializer
+    
+    @action(detail=True, methods=['get'])
+    def worktrees(self, request, pk=None):
+        """指定されたTodoListのworkdirでgit worktree listを実行し、結果を取得"""
+        todolist = self.get_object()
+        worktrees = get_git_worktrees(todolist.workdir)
+        return Response({'worktrees': worktrees})
 
 
 class AgentViewSet(viewsets.ModelViewSet):
@@ -126,3 +200,10 @@ class TodoViewSet(viewsets.ModelViewSet):
         todo.save()
         serializer = self.get_serializer(todo)
         return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def worktrees(self, request, pk=None):
+        """指定されたTodoが所属するTodoListのworkdirでgit worktree listを実行し、結果を取得"""
+        todo = self.get_object()
+        worktrees = get_git_worktrees(todo.todo_list.workdir)
+        return Response({'worktrees': worktrees})
