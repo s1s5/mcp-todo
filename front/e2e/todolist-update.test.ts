@@ -77,7 +77,7 @@ test.describe('TodoList Update Page', () => {
 		await expect(page.locator('#name')).toBeVisible();
 
 		// Click cancel link
-		await page.locator('a[href="/todolist/1/"]').click();
+		await page.getByRole('link', { name: 'Cancel' }).click();
 
 		// Should navigate to detail page
 		await expect(page).toHaveURL('/todolist/1/');
