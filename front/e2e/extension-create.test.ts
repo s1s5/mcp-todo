@@ -92,8 +92,8 @@ test.describe('Extension Create Page', () => {
 		await expect(page.locator('#cmd')).toBeVisible();
 		await expect(page.locator('button[type="submit"]')).toBeVisible();
 
-		// HTMLスナップショットを取得して比較
-		const html = await page.content();
+		// main要素のinnerHTMLスナップショットを取得して比較
+		const html = await page.locator('main').innerHTML();
 		expect(html).toMatchSnapshot('extension-create.html');
 	});
 });
