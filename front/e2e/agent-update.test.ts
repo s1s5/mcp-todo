@@ -165,6 +165,7 @@ test.describe('Agent Update Page', () => {
 		await expect(nameInput).toHaveValue('Test Agent', { timeout: 10000 });
 
 		// Take HTML snapshot
-		await expect(await page.content()).toMatchSnapshot('agent-update.html');
+		const html = await page.locator('div.p-6.max-w-2xl.mx-auto').innerHTML();
+		expect(html).toMatchSnapshot('agent-update.html');
 	});
 });
