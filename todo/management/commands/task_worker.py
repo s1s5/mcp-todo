@@ -330,15 +330,29 @@ class Command(BaseCommand):
         """新しいTodoを起動"""
         workdir = todo.todo_list.workdir
 
-        # branch_name が未設定の場合は生成して保存
+        # branch_name が未設定の場合は workdir の現在のブランチ名を取得
         if not todo.branch_name:
-            import random
-            import string
-            from datetime import datetime
+            # workdir で現在のブランチ名を取得
+            result = subprocess.run(
+                ["git", "branch", "--show-current"],
+                cwd=workdir,
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0 and result.stdout.strip():
+                # ブランチ名を取得出来たら使用
+                todo.branch_name = result.stdout.strip()
+            else:
+                # 取得出来なかった場合は自动生成
+                import random
+                import string
+                from datetime import datetime
 
-            now = datetime.now()
-            random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
-            todo.branch_name = "ai/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
+                now = datetime.now()
+                random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
+                todo.branch_name = "ai/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
+            
             todo.save(update_fields=["branch_name"])
 
         self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始 (workdir: {workdir})"))
