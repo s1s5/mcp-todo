@@ -24,6 +24,8 @@
 		created_at: string;
 		updated_at: string;
 		branch_name: string | null;
+		started_at: string | null;
+		finished_at: string | null;
 	}
 
 	let todo: Todo | null = $state(null);
@@ -148,6 +150,25 @@
 		});
 	}
 
+	function formatDuration(startedAt: string | null, finishedAt: string | null): string | null {
+		if (!startedAt || !finishedAt) return null;
+		const start = new Date(startedAt);
+		const end = new Date(finishedAt);
+		const diffMs = end.getTime() - start.getTime();
+		if (diffMs < 0) return null;
+		const totalSeconds = Math.floor(diffMs / 1000);
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		return `${minutes}分${seconds}秒`;
+	}
+
+	const terminalStatuses = ['completed', 'error', 'cancelled', 'timeout'];
+
+	function getProcessingTime(todo: Todo): string | null {
+		if (!terminalStatuses.includes(todo.status)) return null;
+		return formatDuration(todo.started_at, todo.finished_at);
+	}
+
 	onMount(() => {
 		fetchTodo();
 		// statusがrunningのときは5秒ごとにポーリング
@@ -230,6 +251,11 @@
 						<span class="px-3 py-1 text-sm font-medium rounded-full {getStatusColor(todo.status)}">
 							{todo.status}
 						</span>
+						{#if getProcessingTime(todo)}
+							<span class="text-sm text-gray-600">
+								処理時間: {getProcessingTime(todo)}
+							</span>
+						{/if}
 					</div>
 				</div>
 			</div>
