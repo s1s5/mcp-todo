@@ -83,8 +83,8 @@ class Command(BaseCommand):
         worktree_root: str,
         inplace: bool,
         agent_quiet: bool,
-        **options,
         dump_recipe: bool = False,
+        **options,
     ):
         # Todo取得
         try:

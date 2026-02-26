@@ -45,7 +45,7 @@ def run_task_in_subprocess(todo_pk: int, pipe, output_queue: Queue, worktree_roo
         call_command(
             "run_task",
             todo_pk=todo_pk,
-            inplace=False,
+            inplace=True,
             worktree_root=worktree_root,
             # agent_quiet=True,
             stdout=parent_stdout,
@@ -96,7 +96,9 @@ class Command(BaseCommand):
         self.worktree_root = os.path.expanduser(worktree_root)
 
         # 環境変数またはCLI引数から最大並列数を取得
-        self.max_parallel = max_parallel if max_parallel is not None else int(os.environ.get("TASK_WORKER_MAX_PARALLEL", "5"))
+        self.max_parallel = (
+            max_parallel if max_parallel is not None else int(os.environ.get("TASK_WORKER_MAX_PARALLEL", "5"))
+        )
 
         while True:
             self.process_loop(interval)
@@ -110,18 +112,17 @@ class Command(BaseCommand):
         try:
             running_workdir_list = list(self.running_workdirs.keys())
             if running_workdir_list:
-                todos = Todo.objects.filter(
-                    status=Todo.Status.QUEUED
-                ).exclude(
-                    todo_list__workdir__in=running_workdir_list
-                ).order_by("-priority", "created_at")
+                todos = (
+                    Todo.objects.filter(status=Todo.Status.QUEUED)
+                    .exclude(todo_list__workdir__in=running_workdir_list)
+                    .order_by("-priority", "created_at")
+                )
             else:
-                todos = Todo.objects.filter(
-                    status=Todo.Status.QUEUED
-                ).order_by("-priority", "created_at")
+                todos = Todo.objects.filter(status=Todo.Status.QUEUED).order_by("-priority", "created_at")
             next_todo = todos.first()
         except Exception as e:
             import traceback
+
             self.stdout.write(self.style.ERROR(f"Todo取得エラー: {e}"))
             self.stdout.write(traceback.format_exc())
             time.sleep(interval)
@@ -144,15 +145,15 @@ class Command(BaseCommand):
         finished_workdirs = []
 
         for workdir, info in self.running_workdirs.items():
-            process = info['process']
-            todo = info['todo']
-            start_time = info['start_time']
-            parent_conn = info['parent_conn']
-            output_queue = info['output_queue']
-            stdout_lines = info['stdout_lines']
-            stderr_lines = info['stderr_lines']
+            process = info["process"]
+            todo = info["todo"]
+            start_time = info["start_time"]
+            parent_conn = info["parent_conn"]
+            output_queue = info["output_queue"]
+            stdout_lines = info["stdout_lines"]
+            stderr_lines = info["stderr_lines"]
             timeout_seconds = todo.timeout
-            worktree_path = info.get('worktree_path')
+            worktree_path = info.get("worktree_path")
 
             try:
                 # DBから最新の状態を取得
@@ -160,7 +161,9 @@ class Command(BaseCommand):
 
                 # cancelledチェック
                 if todo.status == Todo.Status.CANCELLED:
-                    self.stdout.write(self.style.WARNING(f"Todo #{todo.id} (workdir: {workdir}) がcancelledされました"))
+                    self.stdout.write(
+                        self.style.WARNING(f"Todo #{todo.id} (workdir: {workdir}) がcancelledされました")
+                    )
                     self.terminate_process(process)
                     todo.output = "=== CANCELLED ===\nCancelled by user"
                     todo.save()
@@ -173,7 +176,11 @@ class Command(BaseCommand):
                 # タイムアウトチェック
                 elapsed = time.time() - start_time
                 if elapsed >= timeout_seconds:
-                    self.stdout.write(self.style.ERROR(f"Todo #{todo.id} (workdir: {workdir}) がタイムアウトしました（{timeout_seconds}秒）"))
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Todo #{todo.id} (workdir: {workdir}) がタイムアウトしました（{timeout_seconds}秒）"
+                        )
+                    )
                     self.terminate_process(process)
                     todo.status = Todo.Status.TIMEOUT
                     todo.output = f"=== TIMEOUT ===\nTimed out after {timeout_seconds} seconds"
@@ -240,7 +247,7 @@ class Command(BaseCommand):
             now = datetime.now()
             random_suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
             todo.branch_name = "ai/{}/{}/{}".format(now.strftime("%Y-%m-%d/%H-%M-%S"), random_suffix)
-            todo.save(update_fields=['branch_name'])
+            todo.save(update_fields=["branch_name"])
 
         self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} を処理開始 (workdir: {workdir})"))
         self.stdout.write(f"  ブランチ: {todo.branch_name}")
@@ -249,7 +256,7 @@ class Command(BaseCommand):
         # ステータスをrunningに変更
         todo.status = Todo.Status.RUNNING
         todo.started_at = timezone.now()
-        todo.save(update_fields=['status', 'started_at'])
+        todo.save(update_fields=["status", "started_at"])
 
         # multiprocessingで子プロセスを起動
         self.run_task_with_multiprocessing(todo, workdir)
@@ -262,21 +269,25 @@ class Command(BaseCommand):
         # worktree パスを計算して保存
         worktree_path = self.get_worktree_path(workdir, todo.branch_name)
 
-        process = Process(target=run_task_in_subprocess, args=(todo.pk, child_conn, output_queue, self.worktree_root))
+        process = Process(
+            target=run_task_in_subprocess, args=(todo.pk, child_conn, output_queue, self.worktree_root)
+        )
         process.start()
 
-        self.stdout.write(f"Todo #{todo.pk} を子プロセスで実行中 (PID: {process.pid}, workdir: {workdir}, worktree: {worktree_path})...")
+        self.stdout.write(
+            f"Todo #{todo.pk} を子プロセスで実行中 (PID: {process.pid}, workdir: {workdir}, worktree: {worktree_path})..."
+        )
 
         # running_workdirsに追加
         self.running_workdirs[workdir] = {
-            'process': process,
-            'todo': todo,
-            'start_time': time.time(),
-            'parent_conn': parent_conn,
-            'output_queue': output_queue,
-            'stdout_lines': [],
-            'stderr_lines': [],
-            'worktree_path': worktree_path,
+            "process": process,
+            "todo": todo,
+            "start_time": time.time(),
+            "parent_conn": parent_conn,
+            "output_queue": output_queue,
+            "stdout_lines": [],
+            "stderr_lines": [],
+            "worktree_path": worktree_path,
         }
 
     def handle_subprocess_result(self, todo: Todo, result: dict):
@@ -313,7 +324,7 @@ class Command(BaseCommand):
                 self.style.ERROR(f"Todo #{todo.id} がエラーで終了しました（終了コード: {returncode}）")
             )
 
-        todo.save(update_fields=['status', 'output', 'finished_at'])
+        todo.save(update_fields=["status", "output", "finished_at"])
 
     def get_worktree_path(self, workdir: str, branch_name: str) -> str:
         """worktree パスを計算する
