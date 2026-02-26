@@ -320,11 +320,30 @@ class TodoViewSet(viewsets.ModelViewSet):
     def worktrees(self, request, pk=None):
         """指定されたTodoが所属するTodoListのworkdirでgit worktree listを実行し、結果を取得"""
         todo = self.get_object()
-        logging.info(f"todo.todo_list.workdir = {todo.todo_list.workdir}")
-        logging.info(f"todo.todo_list.id = {todo.todo_list.id}")
+        
+        # todo_listの存在チェック
+        if not todo.todo_list:
+            logger.info(f"todo {pk} has no todo_list")
+            return Response(
+                {'error': 'このTodoにはTodoListが紐づいていません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        workdir = todo.todo_list.workdir
+        
+        # workdirの存在チェック
+        if not workdir:
+            logger.info(f"todo_list {todo.todo_list.id} has no workdir")
+            return Response(
+                {'error': 'TodoListにworkdirが設定されていません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        logger.info(f"todo.todo_list.workdir = {workdir}")
+        
         try:
-            worktrees = get_git_worktrees(todo.todo_list.workdir)
-            return Response({'workdir': todo.todo_list.workdir, 'worktrees': worktrees})
+            worktrees = get_git_worktrees(workdir)
+            return Response({'workdir': workdir, 'worktrees': worktrees})
         except ValueError as e:
             return Response(
                 {'error': str(e)},
