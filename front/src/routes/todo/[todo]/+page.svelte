@@ -37,6 +37,13 @@
 	let processingId = $state<number | null>(null);
 	let updatingPriority = $state(false);
 
+	// ブランチ選択用 state
+	let branches: string[] = $state([]);
+	let loadingBranches = $state(false);
+	let updatingBranch = $state(false);
+	let branchError = $state('');
+	let showBranchSelect = $state(false);
+
 	// CSRFトークンを取得する関数
 	function getCSRFToken(): string {
 		const name = 'csrftoken';
@@ -149,6 +156,56 @@
 		} finally {
 			updatingPriority = false;
 		}
+	}
+
+	async function fetchBranches() {
+		if (!todo) return;
+		loadingBranches = true;
+		branchError = '';
+		try {
+			const res = await fetch(`/api/todos/${todo.id}/branches/`);
+			if (!res.ok) throw new Error('Failed to fetch branches');
+			const data: string[] = await res.json();
+			branches = data;
+		} catch (e) {
+			branchError = e instanceof Error ? e.message : 'Failed to load branches';
+			// エラー時はブランチ一覧を空にする（従来通り現在値のみ表示）
+			branches = [];
+		} finally {
+			loadingBranches = false;
+		}
+	}
+
+	async function updateBranch(newBranch: string) {
+		if (!todo) return;
+		updatingBranch = true;
+		branchError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todos/${todo.id}/`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
+				},
+				credentials: 'same-origin',
+				body: JSON.stringify({ branch_name: newBranch })
+			});
+			if (!res.ok) throw new Error('Failed to update branch');
+			await fetchTodo();
+			showBranchSelect = false;
+		} catch (e) {
+			branchError = e instanceof Error ? e.message : 'Failed to update branch';
+		} finally {
+			updatingBranch = false;
+		}
+	}
+
+	function toggleBranchSelect() {
+		if (!showBranchSelect && branches.length === 0 && !loadingBranches) {
+			fetchBranches();
+		}
+		showBranchSelect = !showBranchSelect;
 	}
 
 	function getStatusColor(status: string): string {
@@ -310,7 +367,46 @@
 					</div>
 					<div>
 						<span class="block text-sm font-medium text-gray-500 mb-1">Branch</span>
-						<p id="branch" class="text-gray-900 font-mono">{todo.branch_name || '-'}</p>
+						<div class="flex items-center gap-2">
+							<span id="branch" class="text-gray-900 font-mono">{todo.branch_name || '-'}</span>
+							{#if todo.status === 'waiting' || todo.status === 'queued'}
+								{#if showBranchSelect}
+									<select
+										value={todo.branch_name || ''}
+										onchange={(e) => updateBranch((e.target as HTMLSelectElement).value)}
+										disabled={updatingBranch || loadingBranches}
+										class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
+									>
+										{#if loadingBranches}
+											<option value="">Loading...</option>
+										{:else if branches.length > 0}
+											{#each branches as branch}
+												<option value={branch}>{branch}</option>
+											{/each}
+										{:else}
+											<option value="">{todo.branch_name || '-'}</option>
+										{/if}
+									</select>
+									<button
+										onclick={() => showBranchSelect = false}
+										disabled={updatingBranch}
+										class="px-2 py-1 text-sm text-gray-600 hover:text-gray-800 disabled:opacity-50"
+									>
+										キャンセル
+									</button>
+								{:else}
+									<button
+										onclick={toggleBranchSelect}
+										class="px-2 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+									>
+										ブランチ変更
+									</button>
+								{/if}
+							{/if}
+						</div>
+						{#if branchError}
+							<p class="text-red-500 text-sm mt-1">{branchError}</p>
+						{/if}
 					</div>
 					<div>
 						<span class="block text-sm font-medium text-gray-500 mb-1">Timeout</span>
