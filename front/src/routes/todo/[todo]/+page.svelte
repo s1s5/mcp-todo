@@ -332,22 +332,22 @@
 							{#if todo.status === 'waiting' || todo.status === 'queued'}
 								<button
 									onclick={() => updatePriority(-10)}
-									disabled={updatingPriority}
-									class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === -10 ? 'bg-gray-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+									disabled={updatingPriority || (todo.status !== 'waiting' && todo.status !== 'queued')}
+									class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === -10 ? 'bg-gray-600 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'} disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Low
 								</button>
 								<button
 									onclick={() => updatePriority(0)}
-									disabled={updatingPriority}
-									class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 0 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+									disabled={updatingPriority || (todo.status !== 'waiting' && todo.status !== 'queued')}
+									class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'} disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									Middle
 								</button>
 								<button
 									onclick={() => updatePriority(10)}
-									disabled={updatingPriority}
-									class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 10 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} disabled:opacity-50"
+									disabled={updatingPriority || (todo.status !== 'waiting' && todo.status !== 'queued')}
+									class="px-3 py-1 rounded text-sm font-medium transition cursor-pointer {todo.priority === 10 ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700 hover:bg-red-200'} disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									High
 								</button>
