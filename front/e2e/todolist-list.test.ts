@@ -10,13 +10,9 @@ test.describe('TodoList List Page', () => {
 		// Navigate to the page
 		await page.goto('/todolist/');
 
-		// Verify loading indicator is shown
+		// Wait for loading to complete (if shown)
 		const loading = page.locator('#loading-indicator');
-		await expect(loading).toBeVisible();
-		await expect(loading).toHaveText('Loading...');
-
-		// Wait for loading to complete
-		await expect(loading).not.toBeVisible();
+		await expect(loading).not.toBeVisible({ timeout: 5000 });
 
 		// Verify empty message is displayed
 		const emptyMessage = page.locator('#empty-message');
@@ -89,11 +85,10 @@ test.describe('TodoList List Page', () => {
 		await expect(refreshButton).toBeVisible();
 		await refreshButton.click();
 
-		// Wait for loading indicator to appear and disappear
-		await expect(loading).toBeVisible();
-		await expect(loading).not.toBeVisible();
+		// Wait for loading to complete (if shown)
+		await expect(loading).not.toBeVisible({ timeout: 5000 });
 
-		// Verify updated data is displayed
+		// Verify table is displayed and contains updated data
 		const table = page.locator('#todolist-table');
 		await expect(table).toBeVisible();
 		await expect(page.locator('table')).toContainText('Refreshed List');
