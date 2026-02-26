@@ -262,12 +262,14 @@
 									{#each worktrees as wt}
 										<li class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded">
 											<span class="font-mono">{wt.path} ({wt.branch})</span>
-											<button
-												onclick={() => deleteWorktree(wt.path.split('/').pop() || '')}
-												class="text-red-600 hover:text-red-800 text-xs"
-											>
-												削除
-											</button>
+											{#if todolist && wt.path !== todolist.workdir}
+												<button
+													onclick={() => deleteWorktree(wt.path.split('/').pop() || '')}
+													class="text-red-600 hover:text-red-800 text-xs"
+												>
+													削除
+												</button>
+											{/if}
 										</li>
 									{/each}
 								</ul>
