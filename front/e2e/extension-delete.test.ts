@@ -133,12 +133,12 @@ test.describe('Extension Delete Page', () => {
 		// Loading 表示を確認（APIが遅延応答するため）
 		await expect(page.locator('#loading-indicator')).toBeVisible({ timeout: 1000 });
 
-		// Wait for content to be fully loaded
-		const main = page.locator('main');
-		await expect(main).toBeVisible();
+		// Wait for content to be fully loaded - wait for delete button (indicates loading complete)
+		const deleteButton = page.locator('#delete-button');
+		await expect(deleteButton).toBeVisible();
 
-		// Get innerHTML from main element
-		const html = await main.innerHTML();
+		// Get innerHTML from root element
+		const html = await page.locator('.max-w-2xl').innerHTML();
 		expect(html).toMatchSnapshot('extension-delete.html');
 	});
 });
