@@ -301,32 +301,32 @@
 			<div class="px-6 py-4 space-y-4">
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
-						<label for="todo-list" class="block text-sm font-medium text-gray-500 mb-1">TodoList</label>
+						<span class="block text-sm font-medium text-gray-500 mb-1">TodoList</span>
 						<p id="todo-list" class="text-gray-900">{todo.todo_list_name || `ID: ${todo.todo_list}`}</p>
 					</div>
 					<div>
-						<label for="agent" class="block text-sm font-medium text-gray-500 mb-1">Agent</label>
+						<span class="block text-sm font-medium text-gray-500 mb-1">Agent</span>
 						<p id="agent" class="text-gray-900">{todo.agent_name || (todo.agent ? `ID: ${todo.agent}` : '-')}</p>
 					</div>
 					<div>
-						<label for="branch" class="block text-sm font-medium text-gray-500 mb-1">Branch</label>
+						<span class="block text-sm font-medium text-gray-500 mb-1">Branch</span>
 						<p id="branch" class="text-gray-900 font-mono">{todo.branch_name || '-'}</p>
 					</div>
 					<div>
-						<label for="timeout" class="block text-sm font-medium text-gray-500 mb-1">Timeout</label>
+						<span class="block text-sm font-medium text-gray-500 mb-1">Timeout</span>
 						<p id="timeout" class="text-gray-900">{todo.timeout}秒</p>
 					</div>
 					<div>
-						<label for="auto-stash" class="block text-sm font-medium text-gray-500 mb-1">自動スタッシュ</label>
+						<span class="block text-sm font-medium text-gray-500 mb-1">自動スタッシュ</span>
 						<p id="auto-stash" class="text-gray-900">{todo.auto_stash ? 'はい' : 'いいえ'}</p>
 					</div>
 					<div>
-						<label for="keep-branch" class="block text-sm font-medium text-gray-500 mb-1">ブランチ保持</label>
+						<span class="block text-sm font-medium text-gray-500 mb-1">ブランチ保持</span>
 						<p id="keep-branch" class="text-gray-900">{todo.keep_branch ? 'はい' : 'いいえ'}</p>
 					</div>
 					<div class="md:col-span-2">
-						<label id="priority-label" class="block text-sm font-medium text-gray-500 mb-1">優先度</label>
-						<div role="group" aria-labelledby="priority-label" class="flex items-center gap-2">
+						<span class="block text-sm font-medium text-gray-500 mb-1">優先度</span>
+						<div role="group" class="flex items-center gap-2">
 							<span class="px-3 py-1 text-sm font-medium rounded-full {getPriorityColor(todo.priority)}">
 								{todo.priority}
 							</span>
@@ -358,8 +358,8 @@
 				</div>
 
 				<div>
-					<label for="prompt" class="block text-sm font-medium text-gray-500 mb-1">Prompt</label>
-					<div id="prompt" class="p-3 bg-gray-50 rounded text-gray-900 prose prose-sm max-w-none">
+					<span class="block text-sm font-medium text-gray-500 mb-1">Prompt</span>
+					<div class="p-3 bg-gray-50 rounded text-gray-900 prose prose-sm max-w-none">
 						{#if todo.prompt}
 							{@html marked(todo.prompt)}
 						{:else}
@@ -370,15 +370,15 @@
 
 				{#if todo.validation_command}
 					<div>
-						<label for="validation-command" class="block text-sm font-medium text-gray-500 mb-1">完了判断コマンド</label>
-						<div id="validation-command" class="p-3 bg-gray-50 rounded text-gray-900 font-mono text-sm whitespace-pre-wrap">{todo.validation_command}</div>
+						<span class="block text-sm font-medium text-gray-500 mb-1">完了判断コマンド</span>
+						<div class="p-3 bg-gray-50 rounded text-gray-900 font-mono text-sm whitespace-pre-wrap">{todo.validation_command}</div>
 					</div>
 				{/if}
 
 				{#if todo.context}
 					<div>
-						<label for="context" class="block text-sm font-medium text-gray-500 mb-1">Context</label>
-						<div id="context" class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm">
+						<span class="block text-sm font-medium text-gray-500 mb-1">Context</span>
+						<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm">
 							{todo.context}
 						</div>
 					</div>
@@ -386,15 +386,15 @@
 
 				{#if todo.system_prompt}
 					<div>
-						<label for="system-prompt" class="block text-sm font-medium text-gray-500 mb-1">システムプロンプト</label>
-						<div id="system-prompt" class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm">{todo.system_prompt}</div>
+						<span class="block text-sm font-medium text-gray-500 mb-1">システムプロンプト</span>
+						<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm">{todo.system_prompt}</div>
 					</div>
 				{/if}
 
 				{#if todo.error}
 					<div>
-						<label for="error" class="block text-sm font-medium text-red-600 mb-1">Error</label>
-						<div id="error" class="p-3 bg-red-50 border border-red-200 rounded text-red-800 whitespace-pre-wrap">
+						<span class="block text-sm font-medium text-red-600 mb-1">Error</span>
+						<div class="p-3 bg-red-50 border border-red-200 rounded text-red-800 whitespace-pre-wrap">
 							{todo.error}
 						</div>
 					</div>
@@ -402,8 +402,8 @@
 
 				{#if todo.output}
 					<div>
-						<label for="output" class="block text-sm font-medium text-gray-500 mb-1">Output</label>
-						<div id="output" class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm max-h-64 overflow-y-auto">
+						<span class="block text-sm font-medium text-gray-500 mb-1">Output</span>
+						<div class="p-3 bg-gray-50 rounded text-gray-900 whitespace-pre-wrap text-sm max-h-64 overflow-y-auto">
 							{todo.output}
 						</div>
 					</div>
@@ -411,8 +411,8 @@
 
 				{#if todo.ref_files && todo.ref_files.length > 0}
 					<div>
-						<label id="ref-files-label" class="block text-sm font-medium text-gray-500 mb-1">参照ファイル</label>
-						<ul role="list" aria-labelledby="ref-files-label" class="list-disc list-inside text-gray-900">
+						<span class="block text-sm font-medium text-gray-500 mb-1">参照ファイル</span>
+						<ul role="list" class="list-disc list-inside text-gray-900">
 							{#each todo.ref_files as file}
 								<li class="font-mono text-sm">{file}</li>
 							{/each}
@@ -422,8 +422,8 @@
 
 				{#if todo.edit_files && todo.edit_files.length > 0}
 					<div>
-						<label id="edit-files-label" class="block text-sm font-medium text-gray-500 mb-1">編集ファイル</label>
-						<ul role="list" aria-labelledby="edit-files-label" class="list-disc list-inside text-gray-900">
+						<span class="block text-sm font-medium text-gray-500 mb-1">編集ファイル</span>
+						<ul role="list" class="list-disc list-inside text-gray-900">
 							{#each todo.edit_files as file}
 								<li class="font-mono text-sm">{file}</li>
 							{/each}
@@ -433,12 +433,12 @@
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
 					<div>
-						<label for="created-at" class="block text-sm font-medium text-gray-500 mb-1">作成日</label>
-						<p id="created-at" class="text-gray-900">{formatDate(todo.created_at)}</p>
+						<span class="block text-sm font-medium text-gray-500 mb-1">作成日</span>
+						<p class="text-gray-900">{formatDate(todo.created_at)}</p>
 					</div>
 					<div>
-						<label for="updated-at" class="block text-sm font-medium text-gray-500 mb-1">更新日</label>
-						<p id="updated-at" class="text-gray-900">{formatDate(todo.updated_at)}</p>
+						<span class="block text-sm font-medium text-gray-500 mb-1">更新日</span>
+						<p class="text-gray-900">{formatDate(todo.updated_at)}</p>
 					</div>
 				</div>
 			</div>
