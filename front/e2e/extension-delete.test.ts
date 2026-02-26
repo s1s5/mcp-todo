@@ -124,32 +124,21 @@ test.describe('Extension Delete Page', () => {
 
 	test('6. スナップショットテスト: 表示安定化後にスナップショットを取得', async ({ page }) => {
 		await page.route('/api/extensions/1/', async (route) => {
+			await new Promise((resolve) => setTimeout(resolve, 200));
 			await route.fulfill({ status: 200, body: JSON.stringify(mockExtension) });
 		});
 
 		await page.goto('/extension/1/delete');
 
+		// Loading 表示を確認（APIが遅延応答するため）
+		await expect(page.locator('#loading-indicator')).toBeVisible({ timeout: 1000 });
+
 		// Wait for content to be fully loaded
-		const warningMessage = page.locator('#warning-message');
-		const deleteButton = page.locator('#delete-button');
-		const cancelButton = page.locator('#cancel-button');
+		const main = page.locator('main');
+		await expect(main).toBeVisible();
 
-		await expect(warningMessage).toBeVisible();
-		await expect(deleteButton).toBeVisible();
-		await expect(cancelButton).toBeVisible();
-
-		// Get HTML and normalize SvelteKit-generated hashes for consistent snapshot comparison
-		let html = await page.content();
-		
-		// Normalize SvelteKit hashes: replace dynamic hash patterns with fixed values
-		// Pattern: __sveltekit_\w+ -> __sveltekit_HASH
-		html = html.replace(/__sveltekit_\w+/g, '__sveltekit_HASH');
-		// Pattern: /build/start.[A-Za-z0-9]+.js -> /build/start.HASH.js
-		html = html.replace(/\/build\/start\.[A-Za-z0-9]+\.js/g, '/build/start.HASH.js');
-		html = html.replace(/\/build\/layout\.[A-Za-z0-9]+\.js/g, '/build/layout.HASH.js');
-		html = html.replace(/\/build\/page\.[A-Za-z0-9]+\.js/g, '/build/page.HASH.js');
-		
-		// Take snapshot
+		// Get innerHTML from main element
+		const html = await main.innerHTML();
 		expect(html).toMatchSnapshot('extension-delete.html');
 	});
 });
