@@ -296,7 +296,7 @@
 				// タブが前面に表示された → タイトルをリセットして最新データを取得
 				hasNotification = false;
 				updateTitleNotification();
-				fetchTodosSilent();
+				fetchTodos();
 			}
 		});
 	});
