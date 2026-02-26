@@ -27,32 +27,38 @@ test.describe('Todo Update Page', () => {
 	];
 
 	test.beforeEach(async ({ page }) => {
-		// Mock Todo fetch
+		// Mock Todo fetch with delay to allow loading state to be visible
 		await page.route(`/api/todos/${todoId}/`, async (route) => {
 			if (route.request().method() === 'GET') {
 				await route.fulfill({
 					status: 200,
 					contentType: 'application/json',
-					body: JSON.stringify(mockTodo)
+					body: JSON.stringify(mockTodo),
+					delay: 100  // Add delay to allow loading state to be visible
 				});
+			} else {
+				// Let other requests (PUT, etc.) pass through - handled in individual tests
+				await route.continue();
 			}
 		});
 
-		// Mock TodoList fetch
+		// Mock TodoList fetch with delay
 		await page.route('/api/todolists/', async (route) => {
 			await route.fulfill({
 				status: 200,
 				contentType: 'application/json',
-				body: JSON.stringify(mockTodoLists)
+				body: JSON.stringify(mockTodoLists),
+				delay: 50
 			});
 		});
 
-		// Mock Agent fetch
+		// Mock Agent fetch with delay
 		await page.route('/api/agents/', async (route) => {
 			await route.fulfill({
 				status: 200,
 				contentType: 'application/json',
-				body: JSON.stringify(mockAgents)
+				body: JSON.stringify(mockAgents),
+				delay: 50
 			});
 		});
 	});
@@ -85,7 +91,12 @@ test.describe('Todo Update Page', () => {
 	});
 
 	test('3. 送信テスト: 値を変更してSubmitすると、詳細ページへリダイレクトされること', async ({ page }) => {
-		// Mock PUT request for update
+		await page.goto(`/todo/${todoId}/update`);
+
+		// Wait for form to load first
+		await page.locator('#prompt').waitFor();
+
+		// Mock PUT request for update (after page loads)
 		await page.route(`/api/todos/${todoId}/`, async (route) => {
 			if (route.request().method() === 'PUT') {
 				await route.fulfill({
@@ -99,11 +110,6 @@ test.describe('Todo Update Page', () => {
 				});
 			}
 		});
-
-		await page.goto(`/todo/${todoId}/update`);
-
-		// Wait for form to load
-		await page.locator('#prompt').waitFor();
 
 		// Fill in new values
 		await page.locator('#prompt').fill('Updated prompt text');
@@ -130,7 +136,12 @@ test.describe('Todo Update Page', () => {
 	});
 
 	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
-		// Mock error response for PUT request
+		await page.goto(`/todo/${todoId}/update`);
+
+		// Wait for form to load first
+		await page.locator('#prompt').waitFor();
+
+		// Mock error response for PUT request (after page loads)
 		await page.route(`/api/todos/${todoId}/`, async (route) => {
 			if (route.request().method() === 'PUT') {
 				await route.fulfill({
@@ -142,11 +153,6 @@ test.describe('Todo Update Page', () => {
 				});
 			}
 		});
-
-		await page.goto(`/todo/${todoId}/update`);
-
-		// Wait for form to load
-		await page.locator('#prompt').waitFor();
 
 		// Submit form
 		await page.locator('button[type="submit"]').click();
