@@ -176,10 +176,14 @@
 			});
 
 			// Add new todos that fit on the current page (up to pageSize)
+			// Only add new todos if tab is hidden (document.hidden === true)
 			const existingIds = existingTodos.map(t => t.id);
-			const newTodosToAdd = fetchedTodos
-				.filter(t => !existingIds.includes(t.id))
-				.slice(0, pageSize - existingTodos.length);
+			let newTodosToAdd: Todo[] = [];
+			if (document.hidden) {
+				newTodosToAdd = fetchedTodos
+					.filter(t => !existingIds.includes(t.id))
+					.slice(0, pageSize - existingTodos.length);
+			}
 
 			// Merge existing and new todos, sorted by updated_at
 			const mergedTodos = [...existingTodos, ...newTodosToAdd].sort((a, b) =>
