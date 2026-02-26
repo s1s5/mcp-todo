@@ -285,8 +285,8 @@
 		try {
 			const res = await fetch(`/api/todos/${todo.id}/worktrees/`);
 			if (!res.ok) throw new Error('Failed to fetch worktrees');
-			const data: { path: string; branch: string }[] = await res.json();
-			worktrees = data;
+			const data: { workdir: string; worktrees: { path: string; branch: string }[] } = await res.json();
+			worktrees = data.worktrees;
 			// 現在のtodoのworkdirに該当するworktreeを初期選択
 			const currentWorkdir = todo.todo_list_name;
 			if (currentWorkdir) {
