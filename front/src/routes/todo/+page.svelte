@@ -290,6 +290,7 @@
 			{/if}
 			<button
 				onclick={fetchTodos}
+				aria-label="Refresh todo list"
 				class="px-4 py-2 rounded transition {newTodosDetected ? 'bg-yellow-400 text-black animate-pulse' : 'bg-blue-600 text-white hover:bg-blue-700'}"
 			>
 				Refresh
@@ -361,7 +362,7 @@
 									{todo.branch_name || '-'}
 								</td>
 								<td class="px-4 py-4 whitespace-nowrap text-sm">
-									<div class="flex gap-2" onclick={(e) => e.stopPropagation()}>
+									<div class="flex gap-2" role="presentation" onclick={(e) => e.stopPropagation()}>
 										{#if todo.status === 'waiting' || todo.status === 'error'}
 											<button
 												onclick={() => startTodo(todo.id)}
