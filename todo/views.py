@@ -216,7 +216,7 @@ class TodoListViewSet(viewsets.ModelViewSet):
         branches = get_git_branches(todolist.workdir)
         return Response({'branches': branches})
 
-    @action(detail=True, methods=['post'], url_path='worktrees')
+    @action(detail=True, methods=['post'])
     def add_worktree(self, request, pk=None):
         """
         新しいworktreeを追加
