@@ -269,8 +269,39 @@ class TodoListViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        branch_created = False
+
         # worktreeを作成
         try:
+            # ブランチが存在するか確認
+            existing_branches = get_git_branches(todolist.workdir)
+            if branch not in existing_branches:
+                # ブランチが存在しない場合は作成
+                # ベースブランチを取得（現在のチェックアウト中のブランチ）
+                base_result = subprocess.run(
+                    ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+                    cwd=todolist.workdir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                base_branch = base_result.stdout.strip() if base_result.returncode == 0 else 'main'
+
+                # ブランチを作成
+                branch_result = subprocess.run(
+                    ['git', 'branch', branch, base_branch],
+                    cwd=todolist.workdir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                if branch_result.returncode != 0:
+                    return Response(
+                        {'error': f'ブランチの作成に失敗しました: {branch_result.stderr}'},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+                branch_created = True
+
             result = subprocess.run(
                 ['git', 'worktree', 'add', worktree_path, branch],
                 cwd=todolist.workdir,
@@ -286,12 +317,16 @@ class TodoListViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
-            return Response({
+            response_data = {
                 'name': worktree_name,
                 'path': worktree_path,
                 'branch': branch,
                 'message': f'worktree "{worktree_name}" を作成しました'
-            })
+            }
+            if branch_created:
+                response_data['branch_created'] = True
+
+            return Response(response_data)
 
         except Exception as e:
             logger.error(f"add worktree error: {e}")
