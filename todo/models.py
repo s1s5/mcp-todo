@@ -83,6 +83,8 @@ class Todo(models.Model):
     branch_name = models.CharField(max_length=255, default="")
     auto_stash = models.BooleanField(default=True, help_text="自動スタッシュ")
     keep_branch = models.BooleanField(default=False, help_text="ブランチを保持する")
+    started_at = models.DateTimeField(null=True, blank=True, help_text="実行開始時刻")
+    finished_at = models.DateTimeField(null=True, blank=True, help_text="実行完了時刻")
 
     def __str__(self):
         return self.title if self.title else self.prompt[:50]

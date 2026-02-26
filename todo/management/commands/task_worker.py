@@ -22,6 +22,7 @@ from multiprocessing import Pipe, Process, Queue
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from todo.models import Todo
 
@@ -247,7 +248,8 @@ class Command(BaseCommand):
 
         # ステータスをrunningに変更
         todo.status = Todo.Status.RUNNING
-        todo.save()
+        todo.started_at = timezone.now()
+        todo.save(update_fields=['status', 'started_at'])
 
         # multiprocessingで子プロセスを起動
         self.run_task_with_multiprocessing(todo, workdir)
@@ -297,18 +299,21 @@ class Command(BaseCommand):
         if todo.status == Todo.Status.CANCELLED:
             todo.output = full_output
             todo.status = Todo.Status.CANCELLED
+            todo.finished_at = timezone.now()
             self.stdout.write(self.style.WARNING(f"Todo #{todo.id} がcancelledされました"))
         elif returncode == 0:
             todo.status = Todo.Status.COMPLETED
+            todo.finished_at = timezone.now()
             self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} が正常に完了しました"))
         else:
             todo.output = full_output
             todo.status = Todo.Status.ERROR
+            todo.finished_at = timezone.now()
             self.stdout.write(
                 self.style.ERROR(f"Todo #{todo.id} がエラーで終了しました（終了コード: {returncode}）")
             )
 
-        todo.save()
+        todo.save(update_fields=['status', 'output', 'finished_at'])
 
     def get_worktree_path(self, workdir: str, branch_name: str) -> str:
         """worktree パスを計算する
