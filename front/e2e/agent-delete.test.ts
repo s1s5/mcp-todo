@@ -154,6 +154,10 @@ test.describe('Agent Delete Page', () => {
 		await page.goto(`/agent/${agentId}/delete`);
 
 		// Wait for content to be fully loaded
+		const container = page.locator('.max-w-2xl');
+		await expect(container).toBeVisible();
+
+		// Wait for content to be fully loaded
 		const warningMessage = page.locator('.text-red-600');
 		const deleteButton = page.locator('button:has-text("Delete")');
 		const cancelButton = page.locator('a:has-text("Cancel")');
@@ -162,7 +166,7 @@ test.describe('Agent Delete Page', () => {
 		await expect(deleteButton).toBeVisible();
 		await expect(cancelButton).toBeVisible();
 
-		// Take snapshot
-		await expect(page).toHaveScreenshot();
+		// Take HTML snapshot
+		expect(await container.innerHTML()).toMatchSnapshot('agent-delete.html');
 	});
 });

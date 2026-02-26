@@ -126,9 +126,7 @@ test.describe('Agent Create Page', () => {
 		const createButton = page.locator('button[type="submit"]');
 		await expect(createButton).toBeVisible();
 
-		// Take HTML snapshot of main element
-		const mainContent = page.locator('form');
-		await expect(mainContent).toBeAttached();
-		expect(await mainContent.innerHTML()).toMatchSnapshot('agent-create.html');
+		// Take HTML snapshot of form element
+		expect(await form.innerHTML()).toMatchSnapshot('agent-create.html');
 	});
 });
