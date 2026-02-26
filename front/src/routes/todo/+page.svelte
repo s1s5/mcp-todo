@@ -83,9 +83,19 @@
 		return Number($page.url.searchParams.get('page')) || 1;
 	}
 
+	// ステータスフィルタをURLから取得
+	function getStatusFromURL(): string {
+		return $page.url.searchParams.get('status') || '';
+	}
+
 	// ページ移動関数
 	function goToPage(pageNum: number) {
 		const url = new URL($page.url);
+		if (filterStatus) {
+			url.searchParams.set('status', filterStatus);
+		} else {
+			url.searchParams.delete('status');
+		}
 		if (pageNum <= 1) {
 			url.searchParams.delete('page');
 		} else {
@@ -94,7 +104,7 @@
 		window.location.href = url.toString();
 	}
 
-	async function fetchTodos() {
+	async function fetchTodos(updateUrl: boolean = false) {
 		loading = true;
 		error = '';
 		newTodosDetected = false;
@@ -102,6 +112,16 @@
 			let url = `/api/todos/?order_by=-updated_at&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}`;
 			if (filterStatus) {
 				url += `&status=${filterStatus}`;
+			}
+			// Update URL without reload
+			if (updateUrl) {
+				const urlObj = new URL($page.url);
+				if (filterStatus) {
+					urlObj.searchParams.set('status', filterStatus);
+				} else {
+					urlObj.searchParams.delete('status');
+				}
+				history.pushState({}, '', urlObj.toString());
 			}
 			const res = await fetch(url);
 			if (!res.ok) throw new Error('Failed to fetch');
@@ -231,6 +251,7 @@
 	onMount(() => {
 		pageSize = calculatePageSize();  // 画面サイズに基づいてpageSizeを計算
 		currentPage = getPageFromURL();
+		filterStatus = getStatusFromURL();
 		fetchTodos();
 		// Start polling every 5 seconds
 		pollInterval = setInterval(fetchTodosSilent, 5000);
@@ -251,7 +272,7 @@
 		<div class="flex gap-4 items-center">
 			<select
 				bind:value={filterStatus}
-				onchange={fetchTodos}
+				onchange={() => { currentPage = 1; fetchTodos(true); }}
 				class="px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 			>
 				<option value="">All Status</option>
