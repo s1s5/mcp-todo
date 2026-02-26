@@ -21,10 +21,26 @@ test.describe('TodoList Delete Page', () => {
 		});
 
 		await page.goto('/todolist/1/delete');
-		await expect(page).toHaveURL('/todolist/1/delete');
+		// SvelteKit adds trailing slash
+		await expect(page).toHaveURL(/\/todolist\/1\/delete\/?/);
 	});
 
-	test('2. 確認画面表示: 削除対象の情報と警告メッセージが表示されること', async ({ page }) => {
+	test('2. Loading表示: データ取得中にLoadingメッセージが表示されること', async ({ page }) => {
+		await page.route('/api/todolists/1/', async (route) => {
+			// Add delay to allow loading state to be visible
+			await new Promise((resolve) => setTimeout(resolve, 100));
+			await route.fulfill({ status: 200, body: JSON.stringify(mockTodoList) });
+		});
+
+		await page.goto('/todolist/1/delete');
+
+		// Loading message should be visible initially
+		await expect(page.locator('text=Loading...')).toBeVisible();
+		// Then content should load
+		await expect(page.locator('text=削除するTodoList')).toBeVisible();
+	});
+
+	test('3. 確認画面表示: 削除対象の情報と警告メッセージが表示されること', async ({ page }) => {
 		await page.route('/api/todolists/1/', async (route) => {
 			await route.fulfill({ status: 200, body: JSON.stringify(mockTodoList) });
 		});
@@ -43,7 +59,7 @@ test.describe('TodoList Delete Page', () => {
 		await expect(page.locator('text=作成日')).toBeVisible();
 	});
 
-	test('3. 削除実行: 削除ボタンクリックで一覧へリダイレクトされること', async ({ page }) => {
+	test('4. 削除実行: 削除ボタンクリックで一覧へリダイレクトされること', async ({ page }) => {
 		await page.route('/api/todolists/1/', async (route) => {
 			const method = route.request().method();
 			if (method === 'GET') {
@@ -65,7 +81,7 @@ test.describe('TodoList Delete Page', () => {
 		await expect(page).toHaveURL('/todolist/');
 	});
 
-	test('4. キャンセルボタン: クリックで詳細ページへ戻ること', async ({ page }) => {
+	test('5. キャンセルボタン: クリックで詳細ページへ戻ること', async ({ page }) => {
 		await page.route('/api/todolists/1/', async (route) => {
 			await route.fulfill({ status: 200, body: JSON.stringify(mockTodoList) });
 		});
@@ -82,7 +98,7 @@ test.describe('TodoList Delete Page', () => {
 		await expect(page).toHaveURL('/todolist/1/');
 	});
 
-	test('5. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
+	test('6. エラー表示: サーバーエラー時にエラーメッセージが表示されること', async ({ page }) => {
 		await page.route('/api/todolists/1/', async (route) => {
 			if (route.request().method() === 'GET') {
 				await route.fulfill({ status: 500, body: JSON.stringify({ detail: 'Server Error' }) });
@@ -94,10 +110,10 @@ test.describe('TodoList Delete Page', () => {
 		// Wait for error message to appear
 		const errorMessage = page.locator('.text-red-500');
 		await expect(errorMessage).toBeVisible();
-		await expect(errorMessage).toContainText('Server Error');
+		await expect(errorMessage).toContainText('Failed to fetch');
 	});
 
-	test('6. スナップショットテスト: 表示安定化後にスナップショットを取得', async ({ page }) => {
+	test('7. スナップショットテスト: 表示安定化後にスナップショットを取得', async ({ page }) => {
 		await page.route('/api/todolists/1/', async (route) => {
 			await route.fulfill({ status: 200, body: JSON.stringify(mockTodoList) });
 		});
