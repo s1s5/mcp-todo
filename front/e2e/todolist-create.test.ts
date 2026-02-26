@@ -47,7 +47,7 @@ test.describe('TodoList Create Page', () => {
 		await page.goto('/todolist/create');
 
 		// Click cancel button
-		const cancelButton = page.locator('a[href="/todolist/"]');
+		const cancelButton = page.getByRole('link', { name: 'Cancel' });
 		await expect(cancelButton).toBeVisible();
 		await cancelButton.click();
 
