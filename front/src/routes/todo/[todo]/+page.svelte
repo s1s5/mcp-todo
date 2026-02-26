@@ -579,30 +579,25 @@
 											</button>
 										</div>
 									{:else}
-										<select
+										<input
+											type="text"
+											list="branch-list"
 											value={todo.branch_name || ''}
 											onchange={(e) => {
-												const value = (e.target as HTMLSelectElement).value;
-												if (value === '__new_branch__') {
-													handleSelectNewBranch();
-												} else {
+												const value = (e.target as HTMLInputElement).value;
+												if (value) {
 													updateBranch(value);
 												}
 											}}
 											disabled={updatingBranch || loadingBranches}
-											class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50"
-										>
-											{#if loadingBranches}
-												<option value="">Loading...</option>
-											{:else if branches.length > 0}
-												{#each branches as branch}
-													<option value={branch}>{branch}</option>
-												{/each}
-												<option value="__new_branch__">新しいブランチを作成...</option>
-											{:else}
-												<option value="">{todo.branch_name || '-'}</option>
-											{/if}
-										</select>
+											class="px-2 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 font-mono"
+											placeholder="ブランチ名を入力"
+										/>
+										<datalist id="branch-list">
+											{#each branches as branch}
+												<option value={branch}>{branch}</option>
+											{/each}
+										</datalist>
 										<button
 											onclick={() => showBranchSelect = false}
 											disabled={updatingBranch}
