@@ -74,6 +74,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("--inplace", action="store_true", help="workdir内で実行する")
         parser.add_argument("--agent-quiet", action="store_true", help="AIエージェントの出力を表示しない")
+        parser.add_argument("--dump-recipe", action="store_true", help="レシピファイルのみを出力して終了")
 
     def handle(
         self,
@@ -83,6 +84,7 @@ class Command(BaseCommand):
         inplace: bool,
         agent_quiet: bool,
         **options,
+        dump_recipe: bool = False,
     ):
         # Todo取得
         try:
@@ -106,8 +108,15 @@ class Command(BaseCommand):
         else:
             agent = Agent.objects.all().first()
         assert agent is not None
+        assert agent is not None
 
         self.stdout.write(self.style.SUCCESS("Using Agent: {}".format(agent.name)))
+
+        # dump_recipe オプションが指定された場合はレシピのみ出力して終了
+        if dump_recipe:
+            recipe = self.build_recipe(todo, agent)
+            print(recipe)
+            return
 
         self.stdout.write(self.style.SUCCESS("Workdir: {}".format(workdir)))
         self.stdout.write(self.style.SUCCESS("Todo: {}...".format(todo.prompt[:50])))
