@@ -156,8 +156,8 @@ class Command(BaseCommand):
             stash_id = self.create_stash(workdir)
 
         try:
-            # 3. ブランチ名生成
-            branch_name = self.generate_branch_name() if not todo.branch_name else todo.branch_name
+            # 3. ブランチ名生成（既存のbranch_nameがあれば再利用）
+            branch_name = todo.branch_name if todo.branch_name else self.generate_branch_name()
 
             if inplace:
                 result = subprocess.run(
@@ -181,6 +181,14 @@ class Command(BaseCommand):
                     self.stdout.write("ブランチ作成: {}".format(branch_name))
                     subprocess.run(["git", "switch", "-c", branch_name, "HEAD"], cwd=workdir, check=True)
 
+                # 4. Resumeの場合：stashを復元
+                if todo.stash_id:
+                    self.restore_stash(workdir, todo.stash_id)
+                    # stash_idをクリア
+                    todo.stash_id = ""
+                    todo.interrupted_files = []
+                    todo.save(update_fields=["stash_id", "interrupted_files"])
+
                 try:
                     # 5. 指示ファイル作成
                     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
@@ -202,6 +210,14 @@ class Command(BaseCommand):
             else:
                 # 4. ブランチとworktree作成
                 worktree_path = self.create_worktree(workdir, worktree_root, branch_name)
+
+                # Resumeの場合：stashを復元
+                if todo.stash_id:
+                    self.restore_stash(worktree_path, todo.stash_id)
+                    # stash_idをクリア
+                    todo.stash_id = ""
+                    todo.interrupted_files = []
+                    todo.save(update_fields=["stash_id", "interrupted_files"])
 
                 try:
                     # 5. 指示ファイル作成
@@ -480,10 +496,15 @@ class Command(BaseCommand):
         return result.stdout.strip()
 
     def restore_stash(self, workdir, stash_hash):
+        """stashを復元"""
         self.stdout.write("Stashを復元...")
         try:
             subprocess.run(["git", "stash", "pop", stash_hash], cwd=workdir, check=True)
-        except Exception as e:
-            self.stderr.write(self.style.WARNING(f"Stashを復元することができませんでした。{e}"))
-        else:
             self.stdout.write(self.style.SUCCESS("Stashを復元しました"))
+        except Exception as e:
+            self.stderr.write(self.style.WARNING(f"Stashを復元できませんでした: {e}"))
+            # stashが既に適用されている場合もある
+            try:
+                subprocess.run(["git", "stash", "drop", stash_hash], cwd=workdir, capture_output=True)
+            except:
+                pass

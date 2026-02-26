@@ -140,6 +140,88 @@ class Command(BaseCommand):
         # 3. 空いているworkdirがあれば新しいTodoを起動
         self.start_todo(next_todo)
 
+    def get_interrupted_files(self, worktree_path: str) -> list:
+        """変更ファイルリストを取得（stash保存前）"""
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=worktree_path,
+            capture_output=True,
+            text=True
+        )
+
+        if not result.stdout.strip():
+            return []
+
+        files = []
+        for line in result.stdout.strip().split("\n"):
+            if line:
+                # "M  file.py" → {"status": "M", "path": "file.py"}
+                status = line[:2].strip()
+                filepath = line[3:].strip()
+                files.append({
+                    "status": status,
+                    "path": filepath
+                })
+
+        return files
+
+    def save_to_stash(self, worktree_path: str, workdir: str, todo: Todo) -> str | None:
+        """未コミットの変更をstashに保存し、stash IDを返す"""
+        # 変更があるか確認
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=worktree_path,
+            capture_output=True,
+            text=True
+        )
+
+        if not result.stdout.strip():
+            return None  # 変更なし
+
+        # stashに保存
+        stash_msg = f"todo-{todo.id}-interrupted"
+        subprocess.run(
+            ["git", "stash", "push", "-u", "-m", stash_msg],
+            cwd=worktree_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        # stash IDを取得
+        result = subprocess.run(
+            ["git", "rev-parse", "stash@{0}"],
+            cwd=worktree_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+
+        return result.stdout.strip()
+
+    def handle_interruption(self, worktree_path: str, workdir: str, todo: Todo):
+        """中断処理: 変更ファイル取得 → stash保存 → worktree削除 → DB更新"""
+        stash_id = None
+        interrupted_files = []
+
+        if worktree_path and os.path.exists(worktree_path):
+            # 1. 変更ファイルリストを取得（stash保存前）
+            interrupted_files = self.get_interrupted_files(worktree_path)
+
+            # 2. stashに保存
+            if interrupted_files:
+                stash_id = self.save_to_stash(worktree_path, workdir, todo)
+
+            # 3. worktreeを削除
+            self.cleanup_worktree(worktree_path, workdir)
+
+        # 4. DBを更新
+        todo.stash_id = stash_id or ""
+        todo.interrupted_files = interrupted_files
+        todo.save(update_fields=["stash_id", "interrupted_files"])
+
+        return stash_id, interrupted_files
+
     def check_running_processes(self):
         """実行中のプロセスをチェックし、終了/cancelled/timeoutしたら回収"""
         finished_workdirs = []
@@ -165,11 +247,16 @@ class Command(BaseCommand):
                         self.style.WARNING(f"Todo #{todo.id} (workdir: {workdir}) がcancelledされました")
                     )
                     self.terminate_process(process)
+
+                    # stash保存 + worktree削除 + DB更新
+                    stash_id, files = self.handle_interruption(worktree_path, workdir, todo)
+
                     todo.output = "=== CANCELLED ===\nCancelled by user"
-                    todo.save()
-                    # worktreeクリーンアップ
-                    if worktree_path:
-                        self.cleanup_worktree(worktree_path, workdir)
+                    if stash_id:
+                        todo.output += f"\nStash saved: {stash_id}"
+                    if files:
+                        todo.output += f"\nInterrupted files: {len(files)} files"
+                    todo.save(update_fields=["output"])
                     finished_workdirs.append(workdir)
                     continue
 
@@ -182,12 +269,17 @@ class Command(BaseCommand):
                         )
                     )
                     self.terminate_process(process)
+
+                    # stash保存 + worktree削除 + DB更新
+                    stash_id, files = self.handle_interruption(worktree_path, workdir, todo)
+
                     todo.status = Todo.Status.TIMEOUT
                     todo.output = f"=== TIMEOUT ===\nTimed out after {timeout_seconds} seconds"
-                    todo.save()
-                    # worktreeクリーンアップ
-                    if worktree_path:
-                        self.cleanup_worktree(worktree_path, workdir)
+                    if stash_id:
+                        todo.output += f"\nStash saved: {stash_id}"
+                    if files:
+                        todo.output += f"\nInterrupted files: {len(files)} files"
+                    todo.save(update_fields=["status", "output"])
                     finished_workdirs.append(workdir)
                     continue
 
@@ -212,7 +304,7 @@ class Command(BaseCommand):
 
                     result["stdout"] = "".join(stdout_lines)
                     result["stderr"] = "".join(stderr_lines)
-                    self.handle_subprocess_result(todo, result)
+                    self.handle_subprocess_result(todo, result, worktree_path, workdir)
                     finished_workdirs.append(workdir)
 
             except Exception as e:
@@ -290,7 +382,7 @@ class Command(BaseCommand):
             "worktree_path": worktree_path,
         }
 
-    def handle_subprocess_result(self, todo: Todo, result: dict):
+    def handle_subprocess_result(self, todo: Todo, result: dict, worktree_path: str = None, workdir: str = None):
         """子プロセスの結果を処理"""
         stdout_text = result.get("stdout", "")
         stderr_text = result.get("stderr", "")
@@ -317,14 +409,27 @@ class Command(BaseCommand):
             todo.finished_at = timezone.now()
             self.stdout.write(self.style.SUCCESS(f"Todo #{todo.id} が正常に完了しました"))
         else:
+            # エラー終了：stash保存を試みる
+            stash_id = None
+            interrupted_files = []
+            if worktree_path and os.path.exists(worktree_path):
+                interrupted_files = self.get_interrupted_files(worktree_path)
+                if interrupted_files:
+                    stash_id = self.save_to_stash(worktree_path, workdir, todo)
+                    self.cleanup_worktree(worktree_path, workdir)
+
             todo.output = full_output
             todo.status = Todo.Status.ERROR
             todo.finished_at = timezone.now()
+            todo.stash_id = stash_id or ""
+            todo.interrupted_files = interrupted_files
             self.stdout.write(
                 self.style.ERROR(f"Todo #{todo.id} がエラーで終了しました（終了コード: {returncode}）")
             )
+            if stash_id:
+                self.stdout.write(self.style.WARNING(f"Stash saved: {stash_id}"))
 
-        todo.save(update_fields=["status", "output", "finished_at"])
+        todo.save(update_fields=["status", "output", "finished_at", "stash_id", "interrupted_files"])
 
     def get_worktree_path(self, workdir: str, branch_name: str) -> str:
         """worktree パスを計算する
@@ -341,9 +446,9 @@ class Command(BaseCommand):
 
         run_task.py の cleanup_worktree 메서드와 동등한 처리
         """
-        self.stdout.write(f"Worktree 클린업: {worktree_path}")
+        self.stdout.write(f"Worktree クリーンアップ: {worktree_path}")
         try:
-            # worktree 가 존재하는지 확인
+            # worktree が存在するかをチェック
             if os.path.exists(worktree_path):
                 subprocess.run(
                     ["git", "worktree", "remove", worktree_path],
@@ -351,10 +456,10 @@ class Command(BaseCommand):
                     check=True,
                     capture_output=True,
                 )
-                self.stdout.write(self.style.SUCCESS(f"Worktree를 삭제했습니다: {worktree_path}"))
+                self.stdout.write(self.style.SUCCESS(f"Worktreeを削除しました: {worktree_path}"))
             else:
-                self.stdout.write(self.style.WARNING(f"Worktree가 존재하지 않습니다: {worktree_path}"))
+                self.stdout.write(self.style.WARNING(f"Worktreeが存在しません: {worktree_path}"))
         except subprocess.CalledProcessError as e:
-            self.stdout.write(self.style.ERROR(f"Worktree 삭제에 실패했습니다: {e.stderr}"))
+            self.stdout.write(self.style.ERROR(f"Worktree削除に失敗しました: {e.stderr}"))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Worktree 삭제 중 오류 발생: {e}"))
+            self.stdout.write(self.style.ERROR(f"Worktree削除中にエラー発生: {e}"))

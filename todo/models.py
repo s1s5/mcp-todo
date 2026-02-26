@@ -85,6 +85,17 @@ class Todo(models.Model):
     keep_branch = models.BooleanField(default=False, help_text="ブランチを保持する")
     started_at = models.DateTimeField(null=True, blank=True, help_text="実行開始時刻")
     finished_at = models.DateTimeField(null=True, blank=True, help_text="実行完了時刻")
+    stash_id = models.CharField(
+        max_length=100,
+        default="",
+        blank=True,
+        help_text="中断時のstash ID（resume時に使用）"
+    )
+    interrupted_files = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="中断時の変更ファイルリスト（stash保存前の状態）"
+    )
 
     def __str__(self):
         return self.title if self.title else self.prompt[:50]
