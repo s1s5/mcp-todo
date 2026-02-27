@@ -14,7 +14,7 @@ test.describe('Agent List Page', () => {
 						updated_at: '2024-01-01T09:00:00Z'
 					}
 				],
-				delay: 100
+				delay: 200
 			});
 		});
 

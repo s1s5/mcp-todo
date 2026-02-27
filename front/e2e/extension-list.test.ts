@@ -18,7 +18,7 @@ test.describe('Extension List Page', () => {
 						updated_at: '2024-01-01T00:00:00Z'
 					}
 				],
-				delay: 100
+				delay: 200
 			});
 		});
 
@@ -41,7 +41,7 @@ test.describe('Extension List Page', () => {
 	test('should display loading then empty message when no extensions', async ({ page }) => {
 		// Mock empty response - add delay to ensure loading indicator is visible
 		await page.route('/api/extensions/', async (route) => {
-			await route.fulfill({ json: [], delay: 100 });
+			await route.fulfill({ json: [], delay: 200 });
 		});
 
 		// Navigate to the page

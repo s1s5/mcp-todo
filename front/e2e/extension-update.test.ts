@@ -20,7 +20,7 @@ test.describe('Extension Update Page', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify(mockExtension),
-				delay: 100
+				delay: 200
 			});
 		});
 
@@ -61,7 +61,7 @@ test.describe('Extension Update Page', () => {
 					status: 200,
 					contentType: 'application/json',
 					body: JSON.stringify(mockExtension),
-					delay: 100  // Small delay for loading state
+					delay: 200  // Small delay for loading state
 				});
 			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({
@@ -99,7 +99,7 @@ test.describe('Extension Update Page', () => {
 					status: 200,
 					contentType: 'application/json',
 					body: JSON.stringify(mockExtension),
-					delay: 100
+					delay: 200
 				});
 			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({

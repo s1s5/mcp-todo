@@ -34,7 +34,7 @@ test.describe('Todo Update Page', () => {
 					status: 200,
 					contentType: 'application/json',
 					body: JSON.stringify(mockTodo),
-					delay: 100  // Add delay to allow loading state to be visible
+					delay: 200  // Add delay to allow loading state to be visible
 				});
 			} else {
 				// Let other requests (PUT, etc.) pass through - handled in individual tests

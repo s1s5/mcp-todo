@@ -62,7 +62,7 @@ test.describe('Agent Update Page', () => {
 						created_at: '2024-01-01T00:00:00.000Z',
 						updated_at: '2024-01-01T00:00:00.000Z'
 					}),
-					delay: 100  // Small delay for loading state
+					delay: 200  // Small delay for loading state
 				});
 			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({
@@ -124,7 +124,7 @@ test.describe('Agent Update Page', () => {
 						created_at: '2024-01-01T00:00:00.000Z',
 						updated_at: '2024-01-01T00:00:00.000Z'
 					}),
-					delay: 100  // Small delay for loading state
+					delay: 200  // Small delay for loading state
 				});
 			} else if (route.request().method() === 'PUT') {
 				await route.fulfill({

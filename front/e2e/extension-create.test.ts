@@ -32,7 +32,7 @@ test.describe('Extension Create Page', () => {
 				status: 201,
 				contentType: 'application/json',
 				body: JSON.stringify({ id: 1, name: 'test-ext', type: 'stdio', cmd: 'echo' }),
-				delay: 100  // 100ms遅延させてLoading表示を確認
+				delay: 200  // 100ms遅延させてLoading表示を確認
 			});
 		});
 
