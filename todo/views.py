@@ -634,6 +634,15 @@ class TodoViewSet(viewsets.ModelViewSet):
         
         return super().create(request, *args, **kwargs)
     
+    def partial_update(self, request, *args, **kwargs):
+        # workdirが指定されている場合、TodoListを自動取得/作成して紐づけ
+        workdir = request.data.get('workdir')
+        if workdir:
+            todo_list, _ = get_or_create_todolist_with_parent(workdir)
+            request.data['todo_list'] = todo_list.id
+        
+        return super().partial_update(request, *args, **kwargs)
+    
     @action(detail=True, methods=['post'])
     def start(self, request, pk=None):
         """タスクを開始 statusを 'queued' に変更"""

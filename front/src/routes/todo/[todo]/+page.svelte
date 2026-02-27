@@ -321,9 +321,9 @@
 		worktreeError = '';
 		try {
 			const csrfToken = getCSRFToken();
-			// TodoListのworkdirを選択したworktreeのpathに更新
-			const todoListRes = await fetch(`/api/todo-lists/`, {
-				method: 'POST',
+			// Todoのworkdirを選択したworktreeのpathに更新
+			const todoRes = await fetch(`/api/todos/${todo.id}/`, {
+				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-CSRFToken': csrfToken
@@ -331,7 +331,7 @@
 				credentials: 'same-origin',
 				body: JSON.stringify({ workdir: selectedWorktreePath })
 			});
-			if (!todoListRes.ok) throw new Error('Failed to update workdir');
+			if (!todoRes.ok) throw new Error('Failed to update workdir');
 
 			// ブランチ変更チェックボックスがオンの場合、branch_nameも更新
 			if (changeBranch) {
