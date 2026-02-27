@@ -26,6 +26,7 @@
 		ref_files: string[] | null;
 		edit_files: string[] | null;
 		context: string ;
+		system_prompt: string | null;
 		validation_command: string;
 		timeout: number | null;
 		auto_stash: boolean;
@@ -49,6 +50,7 @@
 	let formRefFiles = $state('');
 	let formEditFiles = $state('');
 	let formContext = $state('');
+	let formSystemPrompt = $state('');
 	let formValidationCommand = $state('');
 	let formTimeout = $state<number | null>(null);
 	let formAutoStash = $state(true);
@@ -91,6 +93,7 @@
 				formRefFiles = (todo.ref_files || []).join('\n');
 				formEditFiles = (todo.edit_files || []).join('\n');
 				formContext = todo.context || '';
+				formSystemPrompt = todo.system_prompt || '';
 				formValidationCommand = todo.validation_command || '';
 				formTimeout = todo.timeout;
 				formAutoStash = todo.auto_stash ?? true;
@@ -154,6 +157,7 @@
 			payload.ref_files = formRefFiles.split('\n').filter(line => line.trim());
 			payload.edit_files = formEditFiles.split('\n').filter(line => line.trim());
 			payload.context = formContext;
+			payload.system_prompt = formSystemPrompt;
 			payload.validation_command = formValidationCommand;
 			payload.auto_stash = formAutoStash;
 			payload.keep_branch = formKeepBranch;
@@ -339,6 +343,20 @@
 						bind:value={formContext}
 						rows="4"
 						placeholder="追加のコンテキスト情報"
+						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+					></textarea>
+				</div>
+
+				<!-- system_prompt -->
+				<div>
+					<label for="system_prompt" class="block text-sm font-medium text-gray-700 mb-2">
+						システムプロンプト (system_prompt)
+					</label>
+					<textarea
+						id="system_prompt"
+						bind:value={formSystemPrompt}
+						rows="4"
+						placeholder="システムプロンプト"
 						class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
 					></textarea>
 				</div>
