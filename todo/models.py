@@ -6,6 +6,14 @@ class TodoList(models.Model):
 
     name = models.CharField(max_length=255, default="", help_text="リスト名")
     workdir = models.CharField(max_length=255)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+        help_text="親TodoList",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
