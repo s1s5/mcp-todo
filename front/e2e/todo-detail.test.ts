@@ -66,7 +66,8 @@ test.describe('Todo Detail Page', () => {
 
 		// スナップショットテスト
 		// 明示的にLinux用のスナップショットファイルを指定
-		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail.html');
+		const html = await page.locator('.max-w-4xl').innerHTML();
+		expect(html).toMatchSnapshot('todo-detail.html');
 	});
 
 	test('should navigate to update page', async ({ page }) => {
@@ -603,6 +604,7 @@ test.describe('Todo Detail Page', () => {
 
 		// メインコンテンツのHTMLスナップショットを取得
 		// 明示的にLinux用のスナップショットファイルを指定
-		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail.html');
+		const html = await page.locator('.max-w-4xl').innerHTML();
+		expect(html).toMatchSnapshot('todo-detail.html');
 	});
 });
