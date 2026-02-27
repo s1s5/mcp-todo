@@ -178,6 +178,65 @@ def get_git_branches(workdir):
         logger.error(f"git branch error in {workdir}: {e}")
         return []
 
+def get_current_branch(workdir):
+    """
+    指定されたworkdirで現在のチェックアウト中のブランチ名を取得する
+    
+    Args:
+        workdir: gitリポジトリのルートディレクトリ
+        
+    Returns:
+        str: 現在のブランチ名（エラー発生時は空文字列を返す）
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+            cwd=workdir,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode != 0:
+            logger.error(f"git rev-parse --abbrev-ref HEAD failed in {workdir}: {result.stderr}")
+            return ''
+        
+        return result.stdout.strip()
+        
+    except subprocess.TimeoutExpired:
+        logger.error(f"git rev-parse timeout in {workdir}")
+        return ''
+    except Exception as e:
+        logger.error(f"git rev-parse error in {workdir}: {e}")
+        return ''
+
+def is_branch_merged(workdir, branch):
+    """
+    指定されたブランチが現在のブランチにマージ済みかどうかをチェックする
+    
+    Args:
+        workdir: gitリポジトリのルートディレクトリ
+        branch: チェック対象のブランチ名
+        
+    Returns:
+        bool: マージ済みの場合はTrue
+    """
+    try:
+        result = subprocess.run(
+            ['git', 'merge-base', '--is-ancestor', branch, 'HEAD'],
+            cwd=workdir,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        # 終了コード0 = branchがHEADの祖先 = マージ済み
+        return result.returncode == 0
+        
+    except Exception as e:
+        logger.error(f"git merge-base error in {workdir}: {e}")
+        return False
+
 
 class TodoPagination(LimitOffsetPagination):
     """Todo用ページネーション: 1ページ50件"""
@@ -224,7 +283,22 @@ class TodoListViewSet(viewsets.ModelViewSet):
     def branches(self, request, pk=None):
         """指定されたTodoListのworkdirでgit branch -aを実行し、ブランチ名一覧を取得"""
         todolist = self.get_object()
-        branches = get_git_branches(todolist.workdir)
+        workdir = todolist.workdir
+        
+        # 現在のブランチを取得
+        current_branch = get_current_branch(workdir)
+        
+        # ブランチ一覧を取得
+        branch_names = get_git_branches(workdir)
+        
+        # 各ブランチについて削除可能フラグを付与
+        branches = []
+        for branch in branch_names:
+            # 現在のブランチの場合は削除不可
+            # マージ済みのブランチのみ削除可能
+            can_delete = branch != current_branch and is_branch_merged(workdir, branch)
+            branches.append({'name': branch, 'can_delete': can_delete})
+        
         return Response({'branches': branches})
 
     @action(detail=True, methods=['post'], url_path='create_branch')
