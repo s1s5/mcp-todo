@@ -7,7 +7,6 @@
 		name: string;
 		workdir: string;
 		created_at: string;
-		updated_at: string;
 	}
 
 	interface Todo {
@@ -45,7 +44,7 @@
 	let showAddForm = $state(false);
 
 	// ブランチ選択用
-	let branches: string[] = $state([]);
+	let branches: { name: string; can_delete: boolean }[] = $state([]);
 	let loadingBranches = $state(false);
 
 	// URLパラメータからtodolist IDを取得
@@ -223,6 +222,25 @@
 			worktreeError = e instanceof Error ? e.message : 'Failed to delete worktree';
 		}
 	}
+
+	// ブランチを削除
+	async function deleteBranch(branchName: string) {
+		if (!branchName) return;
+		branchError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todolists/${todolistId}/branches/${branchName}/`, {
+				method: 'DELETE',
+				headers: {
+					'X-CSRFToken': csrfToken
+				}
+			});
+			if (!res.ok) throw new Error('Failed to delete branch');
+			await fetchBranches();
+		} catch (e) {
+			branchError = e instanceof Error ? e.message : 'Failed to delete branch';
+		}
+	}
 </script>
 
 <div class="p-6 max-w-4xl mx-auto">
@@ -315,7 +333,7 @@
 									/>
 									<datalist id="branch-list-for-create">
 										{#each branches as branch}
-											<option value={branch}>{branch}</option>
+											<option value={branch.name}>{branch.name}</option>
 										{/each}
 									</datalist>
 									<button
@@ -346,8 +364,16 @@
 							{:else if branches.length > 0}
 								<ul class="space-y-1">
 									{#each branches as branch}
-										<li class="bg-gray-50 px-2 py-1 rounded font-mono">
-											{branch}
+										<li class="flex items-center justify-between bg-gray-50 px-2 py-1 rounded font-mono">
+											<span>{branch.name}</span>
+											{#if branch.can_delete}
+												<button
+													onclick={() => deleteBranch(branch.name)}
+													class="text-red-600 hover:text-red-800 text-xs"
+												>
+													削除
+												</button>
+											{/if}
 										</li>
 									{/each}
 								</ul>
@@ -402,7 +428,7 @@
 									/>
 									<datalist id="branch-list">
 										{#each branches as branch}
-											<option value={branch}>{branch}</option>
+											<option value={branch.name}>{branch.name}</option>
 										{/each}
 									</datalist>
 									<button
@@ -432,10 +458,6 @@
 					<div>
 						<dt class="text-sm font-medium text-gray-500">Created</dt>
 						<dd class="mt-1 text-sm text-gray-900">{new Date(todolist.created_at).toLocaleString()}</dd>
-					</div>
-					<div>
-						<dt class="text-sm font-medium text-gray-500">Updated</dt>
-						<dd class="mt-1 text-sm text-gray-900">{new Date(todolist.updated_at).toLocaleString()}</dd>
 					</div>
 				</dl>
 			</div>
