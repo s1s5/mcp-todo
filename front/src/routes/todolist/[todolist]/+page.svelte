@@ -140,15 +140,16 @@
 	}
 
 	// ブランチ一覧を取得
-	async function fetchBranches() {
-		loadingBranches = true;
-		try {
-			const res = await fetch(`/api/todolists/${todolistId}/branches/`);
-			if (!res.ok) throw new Error('Failed to fetch branches');
-			branches = await res.json();
-		} catch (e) {
-			console.error('Failed to fetch branches:', e);
-			branches = [];
+		async function fetchBranches() {
+			loadingBranches = true;
+			try {
+				const res = await fetch(`/api/todolists/${todolistId}/branches/`);
+				if (!res.ok) throw new Error('Failed to fetch branches');
+				const data = await res.json();
+				branches = data.branches;
+			} catch (e) {
+				console.error('Failed to fetch branches:', e);
+				branches = [];
 		} finally {
 			loadingBranches = false;
 		}
