@@ -8,8 +8,8 @@ const mockExtension = {
 	args: [],
 	envs: {},
 	timeout: 60,
-	created_at: '2024-01-01T00:00:00.000Z',
-	updated_at: '2024-01-01T00:00:00.000Z'
+	created_at: '2024-01-01T09:00:00.000Z',
+	updated_at: '2024-01-01T09:00:00.000Z'
 };
 
 test.describe('Extension Delete Page', () => {
