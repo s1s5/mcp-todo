@@ -3,8 +3,8 @@ import { expect, test } from '@playwright/test';
 const mockTodoList = {
 	id: 1,
 	workdir: '/home/user/test',
-	created_at: '2024-01-01T00:00:00Z',
-	updated_at: '2024-01-01T00:00:00Z'
+	created_at: '2024-01-01T00:00:00.000Z',
+	updated_at: '2024-01-01T00:00:00.000Z'
 };
 
 test.describe('TodoList Delete Page', () => {
