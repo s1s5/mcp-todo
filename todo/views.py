@@ -288,6 +288,13 @@ class TodoListViewSet(viewsets.ModelViewSet):
         # 現在のブランチを取得
         current_branch = get_current_branch(workdir)
         
+        # 関連するworktreeのブランチ一覧を取得
+        worktrees = get_git_worktrees(workdir)
+        worktree_branches = set()
+        for wt in worktrees:
+            if 'branch' in wt:
+                worktree_branches.add(wt['branch'])
+        
         # ブランチ一覧を取得
         branch_names = get_git_branches(workdir)
         
@@ -295,8 +302,9 @@ class TodoListViewSet(viewsets.ModelViewSet):
         branches = []
         for branch in branch_names:
             # 現在のブランチの場合は削除不可
+            # worktreeで使用されているブランチも削除不可
             # マージ済みのブランチのみ削除可能
-            can_delete = branch != current_branch and is_branch_merged(workdir, branch)
+            can_delete = branch != current_branch and branch not in worktree_branches and is_branch_merged(workdir, branch)
             branches.append({'name': branch, 'can_delete': can_delete})
         
         return Response({'branches': branches})
