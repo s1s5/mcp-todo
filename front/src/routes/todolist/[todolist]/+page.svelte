@@ -308,7 +308,15 @@
 						<dd class="mt-1 text-sm text-gray-900 font-mono">{todolist.workdir}</dd>
 					</div>
 					<div class="sm:col-span-2">
-						<dt class="text-sm font-medium text-gray-500">Branches</dt>
+						<dt class="text-sm font-medium text-gray-500">
+							Branches
+							<button
+								onclick={() => showBranchAddForm = true}
+								class="ml-2 px-2 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+							>
+								+ 追加
+							</button>
+						</dt>
 						<dd class="mt-1 text-sm text-gray-900 mb-4">
 							{#if branchError}
 								<p class="text-red-500 mb-2">{branchError}</p>
@@ -350,13 +358,6 @@
 										キャンセル
 									</button>
 								</div>
-							{:else}
-								<button
-									onclick={() => showBranchAddForm = true}
-									class="mb-2 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-								>
-									+ 新規作成
-								</button>
 							{/if}
 
 							{#if loadingBranches}
@@ -383,7 +384,15 @@
 						</dd>
 					</div>
 					<div class="sm:col-span-2">
-						<dt class="text-sm font-medium text-gray-500">Worktrees</dt>
+						<dt class="text-sm font-medium text-gray-500">
+							Worktrees
+							<button
+								onclick={() => showAddForm = true}
+								class="ml-2 px-2 py-0.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+							>
+								+ 追加
+							</button>
+						</dt>
 						<dd class="mt-1 text-sm text-gray-900">
 							{#if worktreeError}
 								<p class="text-red-500">{worktreeError}</p>
@@ -445,13 +454,6 @@
 										キャンセル
 									</button>
 								</div>
-							{:else}
-								<button
-									onclick={() => showAddForm = true}
-									class="mt-2 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-								>
-									+ 追加
-								</button>
 							{/if}
 						</dd>
 					</div>
