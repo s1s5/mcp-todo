@@ -38,12 +38,13 @@ if not settings.configured:
 
 
 from todo.models import Todo, TodoList
+from todo.utils import get_or_create_todolist_with_parent
 
 
 def get_todo_list_or_create() -> TodoList:
-    """CWDと同じTodoListを取得、なければ自動作成"""
+    """CWDと同じTodoListを取得、なければ自動作成（worktreeの場合はparentを設定）"""
     cwd = os.getcwd()
-    todo_list, created = TodoList.objects.get_or_create(workdir=cwd)
+    todo_list, created = get_or_create_todolist_with_parent(cwd)
     return todo_list
 
 

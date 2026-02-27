@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from .models import Agent, Extension, Todo, TodoList
+from .utils import get_or_create_todolist_with_parent
 
 
 class AgentSerializer(serializers.ModelSerializer):
@@ -60,12 +61,12 @@ class TodoSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "updated_at", "output", "workdir", "system_prompt", "started_at", "finished_at"]
 
     def create(self, validated_data):
-        # workdirが指定されている場合は、TodoListを自動作成/取得
+        # workdirが指定されている場合は、TodoListを自動作成/取得（worktreeの場合はparentを設定）
         workdir = self.context.get("workdir")
         todo_list = None
 
         if workdir:
-            todo_list, _ = TodoList.objects.get_or_create(workdir=workdir)
+            todo_list, _ = get_or_create_todolist_with_parent(workdir)
 
         if not todo_list:
             todo_list = validated_data.get("todo_list")

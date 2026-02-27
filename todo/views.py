@@ -9,6 +9,7 @@ import os
 from django.conf import settings
 from .models import Todo, TodoList, Agent, Extension
 from .serializers import TodoSerializer, TodoListSerializer, AgentSerializer, ExtensionSerializer
+from .utils import get_or_create_todolist_with_parent
 
 
 logger = logging.getLogger(__name__)
@@ -539,8 +540,8 @@ class TodoViewSet(viewsets.ModelViewSet):
         # workdirが指定されていれば、コンテキストに渡す
         workdir = request.data.get('workdir')
         if workdir:
-            # workdirからtodo_listを取得または作成
-            todo_list, _ = TodoList.objects.get_or_create(workdir=workdir)
+            # workdirからtodo_listを取得または作成（worktreeの場合はparentを設定）
+            todo_list, _ = get_or_create_todolist_with_parent(workdir)
             request.data['todo_list'] = todo_list.id
         
         return super().create(request, *args, **kwargs)
