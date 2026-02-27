@@ -260,16 +260,16 @@
 			<a
 				href="/todolist/{todolist.id}/update"
 				id="update-link"
-				class="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition"
+				class="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition"
 			>
-				Update
+				編集
 			</a>
 			<a
 				href="/todolist/{todolist.id}/delete"
 				id="delete-link"
-				class="px-3 py-1.5 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition"
+				class="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition"
 			>
-				Delete
+				削除
 			</a>
 		{/if}
 		<button
