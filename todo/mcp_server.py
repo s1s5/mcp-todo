@@ -37,6 +37,7 @@ if not settings.configured:
     django.setup()
 
 
+from todo import validate_task
 from todo.models import Todo, TodoList
 from todo.utils import get_or_create_todolist_with_parent
 
@@ -160,6 +161,10 @@ def pushExternalTask(
     for f in edit_files:
         validated_edit_files.append(validate_path(workdir, f, False))
 
+    r = validate_task.validate_task(title=title, prompt=prompt, context=context)
+    if not r.ok:
+        return {"status": "failed", "message": f"タスクに問題があります: {r.reason}"}
+
     todo = Todo.objects.create(
         todo_list=todo_list,
         title=title,
@@ -168,18 +173,18 @@ def pushExternalTask(
         prompt=prompt,
         context=context,
         validation_command=validation_command,
-        branch_name=validated_branch, # f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}",
+        branch_name=validated_branch,  # f"ai/{validated_branch}-{uuid.uuid4().hex[:6]}",
     )
     return {
-        "id": todo.id,
-        "title": todo.title,
-        "ref_files": todo.ref_files,
-        "edit_files": todo.edit_files,
-        "prompt": todo.prompt,
-        "context": todo.context,
-        "validation_command": todo.validation_command,
-        "branch_name": todo.branch_name,
-        "status": "pending",
+        "id": todo.id,  # type: ignore
+        # "title": todo.title,
+        # "ref_files": todo.ref_files,
+        # "edit_files": todo.edit_files,
+        # "prompt": todo.prompt,
+        # "context": todo.context,
+        # "validation_command": todo.validation_command,
+        # "branch_name": todo.branch_name,
+        # "status": "pending",
     }
 
 
@@ -211,7 +216,9 @@ def listExternalTask(status: str = "", page: int = 1, limit: int = 10) -> dict:
     todo_list = get_todo_list_or_create()
 
     # ベースクエリ
-    todos = Todo.objects.filter(todo_list=todo_list).select_related("todo_list", "agent").order_by("-created_at")
+    todos = (
+        Todo.objects.filter(todo_list=todo_list).select_related("todo_list", "agent").order_by("-created_at")
+    )
 
     # ステータスでフィルタリング（ページネーション前の総件数用）
     if status:
@@ -227,7 +234,7 @@ def listExternalTask(status: str = "", page: int = 1, limit: int = 10) -> dict:
 
     # ページネーション
     offset = (page - 1) * limit
-    paginated_todos = filtered_todos[offset:offset + limit]
+    paginated_todos = filtered_todos[offset : offset + limit]
 
     # 優先度順にソート: running > queued > waiting > others
     paginated_todos = sorted(paginated_todos, key=sort_priority)
@@ -238,19 +245,21 @@ def listExternalTask(status: str = "", page: int = 1, limit: int = 10) -> dict:
         # promptを50文字程度に丸める
         prompt_preview = todo.prompt[:50] + "..." if len(todo.prompt) > 50 else todo.prompt
 
-        result.append({
-            "id": todo.id,
-            "status": todo.status,
-            "prompt": prompt_detail(todo.prompt),
-            "prompt_preview": prompt_preview,
-            "todo_list": {
-                "id": todo.todo_list.id,
-                "name": todo.todo_list.workdir,
-            },
-            "agent_name": todo.agent.name if todo.agent else None,
-            "created_at": todo.created_at.isoformat() if todo.created_at else None,
-            "updated_at": todo.updated_at.isoformat() if todo.updated_at else None,
-        })
+        result.append(
+            {
+                "id": todo.id,
+                "status": todo.status,
+                "prompt": prompt_detail(todo.prompt),
+                "prompt_preview": prompt_preview,
+                "todo_list": {
+                    "id": todo.todo_list.id,
+                    "name": todo.todo_list.workdir,
+                },
+                "agent_name": todo.agent.name if todo.agent else None,
+                "created_at": todo.created_at.isoformat() if todo.created_at else None,
+                "updated_at": todo.updated_at.isoformat() if todo.updated_at else None,
+            }
+        )
 
     return {
         "todos": result,
@@ -259,6 +268,7 @@ def listExternalTask(status: str = "", page: int = 1, limit: int = 10) -> dict:
         "current_page": page,
         "limit": limit,
     }
+
 
 def prompt_detail(prompt: str) -> str:
     """promptの詳細を返す（最初の100文字程度）"""
