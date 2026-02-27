@@ -200,7 +200,13 @@ class TodoListViewSet(viewsets.ModelViewSet):
     """
     queryset = TodoList.objects.all()
     serializer_class = TodoListSerializer
-    
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # parentが設定されているTodolistは一覧に表示しない
+        queryset = queryset.filter(parent__isnull=True)
+        return queryset
+
     @action(detail=True, methods=['get'], url_path='worktrees')
     def worktrees(self, request, pk=None):
         """指定されたTodoListのworkdirでgit worktree listを実行し、結果を取得"""
