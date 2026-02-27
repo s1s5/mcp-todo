@@ -371,6 +371,7 @@ class Command(BaseCommand):
             allow_unicode=True,
             Dumper=LiteralDumper,
             sort_keys=False,
+            width=10**9,
         )
         return sio.getvalue()
 
