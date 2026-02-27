@@ -251,6 +251,24 @@
 						<dd class="mt-1 text-sm text-gray-900 font-mono">{todolist.workdir}</dd>
 					</div>
 					<div class="sm:col-span-2">
+						<dt class="text-sm font-medium text-gray-500">Branches</dt>
+						<dd class="mt-1 text-sm text-gray-900 mb-4">
+							{#if loadingBranches}
+								<p class="text-gray-500">Loading...</p>
+							{:else if branches.length > 0}
+								<ul class="space-y-1 mb-2">
+									{#each branches as branch}
+										<li class="bg-gray-50 px-2 py-1 rounded font-mono">
+											{branch}
+										</li>
+									{/each}
+								</ul>
+							{:else}
+								<p class="text-gray-500">ブランチがありません</p>
+							{/if}
+						</dd>
+					</div>
+					<div class="sm:col-span-2">
 						<dt class="text-sm font-medium text-gray-500">Worktrees</dt>
 						<dd class="mt-1 text-sm text-gray-900">
 							{#if worktreeError}
