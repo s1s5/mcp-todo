@@ -220,6 +220,91 @@ class TodoListViewSet(viewsets.ModelViewSet):
         branches = get_git_branches(todolist.workdir)
         return Response({'branches': branches})
 
+    @action(detail=True, methods=['post'], url_path='create_branch')
+    def create_branch(self, request, pk=None):
+        """
+        新しいブランチを作成
+        
+        Request body: {"new_branch_name": "新しいブランチ名", "base_branch": "ベースのブランチ名"}
+        - new_branch_name: 必須、英数字、ハイフン、アンダースコアのみ許可
+        - base_branch: 必須、既存のブランチ名である必要がある
+        """
+        import re
+
+        todolist = self.get_object()
+        new_branch_name = request.data.get('new_branch_name', '').strip()
+        base_branch = request.data.get('base_branch', '').strip()
+
+        # バリデーション: new_branch_name 必须
+        if not new_branch_name:
+            return Response(
+                {'error': 'new_branch_nameは必須です'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # バリデーション: new_branch_name は英数字、ハイフン、アンダースコアのみ許可
+        if not re.match(r'^[a-zA-Z0-9_-]+$', new_branch_name):
+            return Response(
+                {'error': 'new_branch_nameは英数字、ハイフン、アンダースコアのみ使用できます'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # バリデーション: base_branch 必须
+        if not base_branch:
+            return Response(
+                {'error': 'base_branchは必須です'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        workdir = todolist.workdir
+
+        # 既存のブランチ一覧を取得
+        existing_branches = get_git_branches(workdir)
+
+        # バリデーション: 新しいブランチ名が既に存在するか
+        if new_branch_name in existing_branches:
+            return Response(
+                {'error': f'ブランチ "{new_branch_name}" は既に存在します'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # バリデーション: ベースブランチが存在するか
+        if base_branch not in existing_branches:
+            return Response(
+                {'error': f'ベースブランチ "{base_branch}" が存在しません'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ブランチを作成
+        try:
+            result = subprocess.run(
+                ['git', 'branch', new_branch_name, base_branch],
+                cwd=workdir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                logger.error(f"git branch failed: {result.stderr}")
+                return Response(
+                    {'error': f'ブランチの作成に失敗しました: {result.stderr}'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            return Response({
+                'new_branch_name': new_branch_name,
+                'base_branch': base_branch,
+                'message': f'ブランチ "{new_branch_name}" を作成しました'
+            })
+
+        except Exception as e:
+            logger.error(f"create branch error: {e}")
+            return Response(
+                {'error': f'ブランチの作成に失敗しました: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     @action(detail=True, methods=['post'], url_path='worktrees/add')
     def add_worktree(self, request, pk=None):
         """
