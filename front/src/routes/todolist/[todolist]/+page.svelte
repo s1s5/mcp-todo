@@ -33,6 +33,12 @@
 	let worktreeError = $state('');
 
 	// 追加フォーム用
+	let showBranchAddForm = $state(false);
+	let newBranchName = $state('');
+	let newBranchBranch = $state('');
+	let creatingBranch = $state(false);
+	let branchError = $state('');
+
 	let newWorktreeName = $state('');
 	let newWorktreeBranch = $state('');
 	let creatingWorktree = $state(false);
@@ -99,6 +105,38 @@
 			}
 		}
 		return cookieValue;
+	}
+
+	// ブランチを作成
+	async function createBranch() {
+		if (!newBranchName.trim() || !newBranchBranch.trim()) return;
+		creatingBranch = true;
+		branchError = '';
+		try {
+			const csrfToken = getCSRFToken();
+			const res = await fetch(`/api/todolists/${todolistId}/create_branch/`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-CSRFToken': csrfToken
+				},
+				body: JSON.stringify({
+					name: newBranchName.trim(),
+					base_branch: newBranchBranch.trim()
+				})
+			});
+			if (!res.ok) throw new Error('Failed to create branch');
+			// 成功后、ブランチ一覧を再取得
+			await fetchBranches();
+			// フォームをリセット
+			newBranchName = '';
+			newBranchBranch = '';
+			showBranchAddForm = false;
+		} catch (e) {
+			branchError = e instanceof Error ? e.message : 'Failed to create branch';
+		} finally {
+			creatingBranch = false;
+		}
 	}
 
 	// ブランチ一覧を取得
@@ -253,10 +291,59 @@
 					<div class="sm:col-span-2">
 						<dt class="text-sm font-medium text-gray-500">Branches</dt>
 						<dd class="mt-1 text-sm text-gray-900 mb-4">
+							{#if branchError}
+								<p class="text-red-500 mb-2">{branchError}</p>
+							{/if}
+
+							{#if showBranchAddForm}
+								<div class="flex gap-2 items-center mb-2">
+									<input
+										type="text"
+										bind:value={newBranchName}
+										placeholder="新しいブランチ名"
+										disabled={creatingBranch}
+										class="px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+									/>
+									<input
+										type="text"
+										bind:value={newBranchBranch}
+										placeholder="ベースのブランチ"
+										disabled={creatingBranch}
+										list="branch-list-for-create"
+										class="px-2 py-1 text-sm border border-gray-300 rounded font-mono"
+									/>
+									<datalist id="branch-list-for-create">
+										{#each branches as branch}
+											<option value={branch}>{branch}</option>
+										{/each}
+									</datalist>
+									<button
+										onclick={createBranch}
+										disabled={creatingBranch || !newBranchName.trim() || !newBranchBranch.trim()}
+										class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+									>
+										{creatingBranch ? '作成中...' : '作成'}
+									</button>
+									<button
+										onclick={() => showBranchAddForm = false}
+										class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+									>
+										キャンセル
+									</button>
+								</div>
+							{:else}
+								<button
+									onclick={() => showBranchAddForm = true}
+									class="mb-2 px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+								>
+									+ 新規作成
+								</button>
+							{/if}
+
 							{#if loadingBranches}
 								<p class="text-gray-500">Loading...</p>
 							{:else if branches.length > 0}
-								<ul class="space-y-1 mb-2">
+								<ul class="space-y-1">
 									{#each branches as branch}
 										<li class="bg-gray-50 px-2 py-1 rounded font-mono">
 											{branch}
