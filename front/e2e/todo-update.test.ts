@@ -12,8 +12,8 @@ test.describe('Todo Update Page', () => {
 		prompt: 'Original prompt text',
 		status: 'waiting',
 		branch_name: 'test-branch',
-		created_at: '2024-01-01T00:00:00Z',
-		updated_at: '2024-01-01T00:00:00Z'
+		created_at: '2024-01-01T00:00:00.000Z',
+		updated_at: '2024-01-01T00:00:00.000Z'
 	};
 
 	const mockTodoLists = [
