@@ -30,11 +30,11 @@ test('extension detail page displays loading then shows extension info', async (
 				updated_at: '2024-01-02T00:00:00Z'
 			})
 		});
-	}, { delay: 100 });
+	}, { delay: 500 });
 
 	// 1. ページ遷移: `/extension/1` へアクセス（動的ID）
-	// waitUntil: 'domcontentloaded' でHTML読み込み完了時点でテスト開始
-	await page.goto('/extension/1', { waitUntil: 'domcontentloaded' });
+	// waitUntil: 'commit' でページが履歴に追加された時点でテスト開始（Loading表示確認のため）
+	await page.goto('/extension/1', { waitUntil: 'commit' });
 
 	// 2. Loading表示: 初期状態で「Loading...」が表示されること
 	const loadingText = page.locator('text=Loading...');
@@ -86,7 +86,7 @@ test('extension detail page displays loading then shows extension info', async (
 				updated_at: '2024-01-02T00:00:00Z'
 			})
 		});
-	}, { delay: 100 });
+	}, { delay: 500 });
 
 	// 全ての情報が表示されるまで待機
 	const detailsCard = page.locator('h2:has-text("Information")');
