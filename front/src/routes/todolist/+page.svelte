@@ -6,6 +6,7 @@
 		name: string;
 		workdir: string;
 		created_at: string;
+		parent: { id: number; name: string } | null;
 	}
 
 	let todolists: TodoList[] = $state([]);
@@ -80,7 +81,7 @@
 								{list.id}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-								{list.name}
+								{list.parent ? list.parent.name : list.name}
 							</td>
 							<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
 								{list.workdir}

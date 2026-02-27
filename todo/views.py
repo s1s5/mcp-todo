@@ -203,8 +203,8 @@ class TodoListViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        # parentが設定されているTodolistは一覧に表示しない
-        queryset = queryset.filter(parent__isnull=True)
+        # parentが設定されているTodolistも一覧に表示する（parent.nameを表示）
+        # queryset = queryset.filter(parent__isnull=True)
         return queryset
 
     @action(detail=True, methods=['get'], url_path='worktrees')

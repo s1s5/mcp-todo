@@ -12,10 +12,17 @@ class AgentSerializer(serializers.ModelSerializer):
 
 
 class TodoListSerializer(serializers.ModelSerializer):
+    parent = serializers.SerializerMethodField()
+    
     class Meta:
         model = TodoList
-        fields = ["id", "name", "workdir", "created_at"]  # nameを追加
-        read_only_fields = ["created_at"]
+        fields = ['id', 'name', 'workdir', 'created_at', 'updated_at', 'parent']
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def get_parent(self, obj):
+        if obj.parent:
+            return {'id': obj.parent.id, 'name': obj.parent.name}
+        return None
 
 
 class TodoSerializer(serializers.ModelSerializer):
