@@ -1,44 +1,27 @@
 import { expect, test } from '@playwright/test';
+import { mockTodolistDetailApis } from './mocks/api';
 
 test.describe('TodoList Detail Page', () => {
 	test('should display todo list details', async ({ page }) => {
-		// Mock todolist detail API
-		await page.route('**/api/todolists/1/', async (route) => {
+		// Mock APIs with custom todo data
+		await mockTodolistDetailApis(page);
+		await page.route('**/api/todos/**', async (route) => {
 			await route.fulfill({
 				status: 200,
-				json: {
-					id: 1,
-					name: 'Test List',
-					workdir: '/home/user/test',
-					created_at: '2024-01-01T00:00:00Z',
-					updated_at: '2024-01-02T00:00:00Z'
-				}
+				json: [
+					{
+						id: 1,
+						todo_list: 1,
+						agent: 1,
+						agent_name: 'Test Agent',
+						prompt: 'Test prompt',
+						branch_name: 'feature/test',
+						status: 'waiting',
+						created_at: '2024-01-01T00:00:00Z',
+						updated_at: '2024-01-02T00:00:00Z'
+					}
+				]
 			});
-		});
-
-		// Mock todos API with query params
-		await page.route('**/api/todos/**', async (route) => {
-			const url = route.request().url();
-			if (url.includes('todo_list=1')) {
-				await route.fulfill({
-					status: 200,
-					json: [
-						{
-							id: 1,
-							todo_list: 1,
-							agent: 1,
-							agent_name: 'Test Agent',
-							prompt: 'Test prompt',
-							branch_name: 'feature/test',
-							status: 'waiting',
-							created_at: '2024-01-01T00:00:00Z',
-							updated_at: '2024-01-02T00:00:00Z'
-						}
-					]
-				});
-			} else {
-				await route.fulfill({ status: 200, json: [] });
-			}
 		});
 
 		// Navigate to the page
@@ -62,23 +45,7 @@ test.describe('TodoList Detail Page', () => {
 	});
 
 	test('should navigate to update page on update link click', async ({ page }) => {
-		// Mock responses
-		await page.route('**/api/todolists/1/', async (route) => {
-			await route.fulfill({
-				status: 200,
-				json: {
-					id: 1,
-					name: 'Test List',
-					workdir: '/home/user/test',
-					created_at: '2024-01-01T00:00:00Z',
-					updated_at: '2024-01-02T00:00:00Z'
-				}
-			});
-		});
-
-		await page.route('**/api/todos/**', async (route) => {
-			await route.fulfill({ status: 200, json: [] });
-		});
+		await mockTodolistDetailApis(page);
 
 		// Navigate to the page
 		await page.goto('/todolist/1');
@@ -97,23 +64,7 @@ test.describe('TodoList Detail Page', () => {
 	});
 
 	test('should navigate to delete page on delete link click', async ({ page }) => {
-		// Mock responses
-		await page.route('**/api/todolists/1/', async (route) => {
-			await route.fulfill({
-				status: 200,
-				json: {
-					id: 1,
-					name: 'Test List',
-					workdir: '/home/user/test',
-					created_at: '2024-01-01T00:00:00Z',
-					updated_at: '2024-01-02T00:00:00Z'
-				}
-			});
-		});
-
-		await page.route('**/api/todos/**', async (route) => {
-			await route.fulfill({ status: 200, json: [] });
-		});
+		await mockTodolistDetailApis(page);
 
 		// Navigate to the page
 		await page.goto('/todolist/1');
@@ -134,7 +85,10 @@ test.describe('TodoList Detail Page', () => {
 	test('should refresh data on refresh button click', async ({ page }) => {
 		let requestCount = 0;
 
-		// Mock responses that track request count
+		// Mock common APIs first
+		await mockTodolistDetailApis(page);
+
+		// Mock todolist with dynamic response - add AFTER mockTodolistDetailApis for higher priority
 		await page.route('**/api/todolists/1/', async (route) => {
 			requestCount++;
 			if (requestCount === 1) {
@@ -160,10 +114,6 @@ test.describe('TodoList Detail Page', () => {
 					}
 				});
 			}
-		});
-
-		await page.route('**/api/todos/**', async (route) => {
-			await route.fulfill({ status: 200, json: [] });
 		});
 
 		// Navigate to the page
@@ -192,7 +142,7 @@ test.describe('TodoList Detail Page', () => {
 	});
 
 	test('should display empty todos message when no todos exist', async ({ page }) => {
-		// Mock responses
+		// Mock todolist with custom name - add BEFORE mockTodolistDetailApis
 		await page.route('**/api/todolists/1/', async (route) => {
 			await route.fulfill({
 				status: 200,
@@ -206,9 +156,8 @@ test.describe('TodoList Detail Page', () => {
 			});
 		});
 
-		await page.route('**/api/todos/**', async (route) => {
-			await route.fulfill({ status: 200, json: [] });
-		});
+		// Mock common APIs
+		await mockTodolistDetailApis(page);
 
 		// Navigate to the page
 		await page.goto('/todolist/1');
