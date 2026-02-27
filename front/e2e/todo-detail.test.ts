@@ -22,8 +22,8 @@ test.describe('Todo Detail Page', () => {
 		priority: 0,
 		started_at: null,
 		finished_at: null,
-		created_at: '2024-01-01T00:00:00Z',
-		updated_at: '2024-01-01T00:00:00Z',
+		created_at: '2024-01-01T00:00:00.000Z',
+		updated_at: '2024-01-01T00:00:00.000Z',
 		branch_name: 'test-branch'
 	};
 
@@ -331,8 +331,8 @@ test.describe('Todo Detail Page', () => {
 		const completedTodo = {
 			...mockTodo,
 			status: 'completed',
-			started_at: '2024-01-01T00:00:00Z',
-			finished_at: '2024-01-01T00:10:30Z'
+			started_at: '2024-01-01T00:00:00.000Z',
+			finished_at: '2024-01-01T00:10:30.000Z'
 		};
 
 		await page.route('/api/todos/1/', async (route) => {
@@ -355,8 +355,8 @@ test.describe('Todo Detail Page', () => {
 		const errorTodo = {
 			...mockTodo,
 			status: 'error',
-			started_at: '2024-01-01T00:00:00Z',
-			finished_at: '2024-01-01T00:05:15Z'
+			started_at: '2024-01-01T00:00:00.000Z',
+			finished_at: '2024-01-01T00:05:15.000Z'
 		};
 
 		await page.route('/api/todos/1/', async (route) => {
@@ -379,7 +379,7 @@ test.describe('Todo Detail Page', () => {
 		const runningTodo = {
 			...mockTodo,
 			status: 'running',
-			started_at: '2024-01-01T00:00:00Z',
+			started_at: '2024-01-01T00:00:00.000Z',
 			finished_at: null
 		};
 
