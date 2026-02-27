@@ -16,8 +16,8 @@ class TodoListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TodoList
-        fields = ['id', 'name', 'workdir', 'created_at', 'updated_at', 'parent']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = ['id', 'name', 'workdir', 'created_at', 'parent']
+        read_only_fields = ['created_at']
     
     def get_parent(self, obj):
         if obj.parent:
