@@ -121,7 +121,7 @@
 					'X-CSRFToken': csrfToken
 				},
 				body: JSON.stringify({
-					name: newBranchName.trim(),
+					new_branch_name: newBranchName.trim(),
 					base_branch: newBranchBranch.trim()
 				})
 			});
