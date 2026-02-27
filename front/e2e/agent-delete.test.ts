@@ -5,8 +5,8 @@ const mockAgent = {
 	name: 'Test Agent',
 	system_message: 'You are a helpful assistant.',
 	command: 'goose run --recipe',
-	created_at: '2024-01-01T00:00:00Z',
-	updated_at: '2024-01-01T00:00:00Z'
+	created_at: '2024-01-01T00:00:00.000Z',
+	updated_at: '2024-01-01T00:00:00.000Z'
 };
 
 test.describe('Agent Delete Page', () => {
