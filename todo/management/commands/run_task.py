@@ -386,6 +386,8 @@ class Command(BaseCommand):
         if agent_quiet:
             cmd.append("-q")
 
+        env = os.environ.copy()  # 既存環境をコピー
+        env["GOOSE_TEMPERATURE"] = "0.3"
         # Popenでstdout/stderrを別々に扱う
         process = subprocess.Popen(
             cmd,
@@ -394,6 +396,7 @@ class Command(BaseCommand):
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            env=env,
         )
 
         # リアルタイムでstdout/stderrを出力

@@ -161,9 +161,14 @@ def pushExternalTask(
     for f in edit_files:
         validated_edit_files.append(validate_path(workdir, f, False))
 
-    r = validate_task.validate_task(title=title, prompt=prompt, context=context)
-    if not r.ok:
-        return {"status": "failed", "message": f"タスクに問題があります: {r.reason}"}
+    for _ in range(3):
+        try:
+            r = validate_task.validate_task(title=title, prompt=prompt, context=context)
+        except Exception:
+            continue
+        if not r.ok:
+            return {"status": "failed", "message": f"タスクに問題があります: {r.reason}"}
+        break
 
     todo = Todo.objects.create(
         todo_list=todo_list,
