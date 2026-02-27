@@ -15,8 +15,8 @@ test.describe('Agent Update Page', () => {
 						name: 'Test Agent',
 						system_message: 'You are a helpful assistant.',
 						command: 'goose run --recipe',
-						created_at: '2024-01-01T00:00:00Z',
-						updated_at: '2024-01-01T00:00:00Z'
+						created_at: '2024-01-01T00:00:00.000Z',
+						updated_at: '2024-01-01T00:00:00.000Z'
 					}),
 					delay: 500  // Add delay to make loading state visible
 				});
@@ -59,8 +59,8 @@ test.describe('Agent Update Page', () => {
 						name: 'Test Agent',
 						system_message: 'You are a helpful assistant.',
 						command: 'goose run --recipe',
-						created_at: '2024-01-01T00:00:00Z',
-						updated_at: '2024-01-01T00:00:00Z'
+						created_at: '2024-01-01T00:00:00.000Z',
+						updated_at: '2024-01-01T00:00:00.000Z'
 					}),
 					delay: 100  // Small delay for loading state
 				});
@@ -73,8 +73,8 @@ test.describe('Agent Update Page', () => {
 						name: 'Updated Agent',
 						system_message: 'You are a helpful assistant.',
 						command: 'goose run --custom',
-						created_at: '2024-01-01T00:00:00Z',
-						updated_at: '2024-01-02T00:00:00Z'
+						created_at: '2024-01-01T00:00:00.000Z',
+						updated_at: '2024-01-02T00:00:00.000Z'
 					})
 				});
 			}
@@ -121,8 +121,8 @@ test.describe('Agent Update Page', () => {
 						name: 'Test Agent',
 						system_message: 'You are a helpful assistant.',
 						command: 'goose run --recipe',
-						created_at: '2024-01-01T00:00:00Z',
-						updated_at: '2024-01-01T00:00:00Z'
+						created_at: '2024-01-01T00:00:00.000Z',
+						updated_at: '2024-01-01T00:00:00.000Z'
 					}),
 					delay: 100  // Small delay for loading state
 				});
