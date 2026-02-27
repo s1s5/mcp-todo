@@ -167,7 +167,7 @@ test.describe('Agent Delete Page', () => {
 		await expect(cancelButton).toBeVisible();
 
 		// Take HTML snapshot of form element
-		const formElement = page.locator('form');
+		const formElement = page.locator('.bg-white.shadow');
 		await expect(formElement).toBeVisible();
 		expect(await formElement.innerHTML()).toMatchSnapshot('agent-delete-form.html');
 	});
