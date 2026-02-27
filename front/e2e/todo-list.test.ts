@@ -163,6 +163,7 @@ test.describe('Todo List Page', () => {
 		await expect(table).toBeVisible();
 
 		// Take snapshot after page is stabilized (using specific element to avoid build hash values)
-		await expect(page.locator('.max-w-6xl')).toMatchSnapshot('todo-list.html');
+		const html = await page.locator('.max-w-6xl').innerHTML();
+		expect(html).toMatchSnapshot('todo-list.html');
 	});
 });
