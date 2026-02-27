@@ -38,6 +38,20 @@ test.describe('Todo Detail Page', () => {
 		});
 
 		// ページへアクセス
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 		await page.goto('/todo/1');
 
 		// Todo情報が表示されるまで待機
@@ -62,6 +76,20 @@ test.describe('Todo Detail Page', () => {
 				body: JSON.stringify(mockTodo)
 			});
 		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 
 		await page.goto('/todo/1');
 
@@ -83,6 +111,20 @@ test.describe('Todo Detail Page', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify(mockTodo)
+			});
+		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
 			});
 		});
 
@@ -122,6 +164,20 @@ test.describe('Todo Detail Page', () => {
 					body: JSON.stringify(waitingTodo)
 				});
 			}
+		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
 		});
 
 		await page.goto('/todo/1');
@@ -165,6 +221,20 @@ test.describe('Todo Detail Page', () => {
 				});
 			}
 		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 
 		await page.goto('/todo/1');
 
@@ -200,6 +270,20 @@ test.describe('Todo Detail Page', () => {
 			});
 		});
 
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 		await page.goto('/todo/1');
 
 		// 優先度ラベルが表示されている
@@ -242,6 +326,20 @@ test.describe('Todo Detail Page', () => {
 			}
 		});
 
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 		await page.goto('/todo/1');
 
 		// Lowボタンをクリック
@@ -277,6 +375,20 @@ test.describe('Todo Detail Page', () => {
 			}
 		});
 
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 		await page.goto('/todo/1');
 
 		// Middleボタンをクリック
@@ -312,6 +424,20 @@ test.describe('Todo Detail Page', () => {
 			}
 		});
 
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 		await page.goto('/todo/1');
 
 		// Highボタンをクリック
@@ -342,6 +468,20 @@ test.describe('Todo Detail Page', () => {
 				body: JSON.stringify(completedTodo)
 			});
 		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 
 		await page.goto('/todo/1');
 
@@ -364,6 +504,20 @@ test.describe('Todo Detail Page', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify(errorTodo)
+			});
+		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
 			});
 		});
 
@@ -390,10 +544,22 @@ test.describe('Todo Detail Page', () => {
 				body: JSON.stringify(runningTodo)
 			});
 		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
 
 		await page.goto('/todo/1');
-
-		// 処理時間は表示されていない
 		const processingTime = page.locator('text=処理時間:');
 		await expect(processingTime).not.toBeVisible();
 	});
@@ -408,6 +574,20 @@ test.describe('Todo Detail Page', () => {
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify(waitingTodo)
+			});
+		});
+		await page.route('/api/todos/1/worktrees/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
+			});
+		});
+		await page.route('/api/todos/1/branches/', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify([])
 			});
 		});
 
