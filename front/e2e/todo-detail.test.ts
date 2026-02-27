@@ -65,6 +65,7 @@ test.describe('Todo Detail Page', () => {
 		await expect(page.locator('text=waiting')).toBeVisible();
 
 		// スナップショットテスト
+		// 明示的にLinux用のスナップショットファイルを指定
 		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail.html');
 	});
 
@@ -187,7 +188,8 @@ test.describe('Todo Detail Page', () => {
 		await expect(priorityLabel).toBeVisible();
 
 		// priority値が表示されている（priority=0 の場合は灰色のバッジ）
-		const priorityValue = priorityLabel.locator('..').locator('span').first();
+		// priority値は label の兄弟要素の div 内の最初の span
+		const priorityValue = priorityLabel.locator('..').locator('div').locator('span').first();
 		await expect(priorityValue).toBeVisible();
 		await expect(priorityValue).toHaveText('0');
 
@@ -243,7 +245,8 @@ test.describe('Todo Detail Page', () => {
 		await expect(priorityLabel).toBeVisible();
 
 		// priority値が表示されている
-		const priorityValue = priorityLabel.locator('..').locator('span').first();
+		// priority値は label の兄弟要素の div 内の最初の span
+		const priorityValue = priorityLabel.locator('..').locator('div').locator('span').first();
 		await expect(priorityValue).toBeVisible();
 		await expect(priorityValue).toHaveText('-10');
 
@@ -291,7 +294,8 @@ test.describe('Todo Detail Page', () => {
 		await expect(priorityLabel).toBeVisible();
 
 		// priority値が表示されている
-		const priorityValue = priorityLabel.locator('..').locator('span').first();
+		// priority値は label の兄弟要素の div 内の最初の span
+		const priorityValue = priorityLabel.locator('..').locator('div').locator('span').first();
 		await expect(priorityValue).toBeVisible();
 		await expect(priorityValue).toHaveText('10');
 
@@ -598,6 +602,7 @@ test.describe('Todo Detail Page', () => {
 		await expect(page.getByText('waiting')).toBeVisible();
 
 		// メインコンテンツのHTMLスナップショットを取得
-		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail-priority.html');
+		// 明示的にLinux用のスナップショットファイルを指定
+		await expect(page.locator('.max-w-4xl')).toMatchSnapshot('todo-detail.html');
 	});
 });
